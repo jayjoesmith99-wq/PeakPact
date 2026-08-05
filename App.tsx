@@ -163,16 +163,16 @@ import {
 
 type PactStatus = "ACTIVE" | "ALERT" | "SYNCING" | "REDSTATE";
 
-const MATRIX_GREEN = "#00FF00";
-const AMBER = "#FFB000";
-const CRIMSON = "#FF0033";
-const PEAK_CRIMSON = "#FF2A2A";
-const BONE_WHITE = "#F4F4F5";
+const MATRIX_GREEN = "#25F9D5";
+const AMBER = "#FFC95C";
+const CRIMSON = "#FF4ED8";
+const PEAK_CRIMSON = "#FF5DBD";
+const BONE_WHITE = "#F7FCFF";
 const LOCAL_ACCESS_SESSION_KEY = "@peakpact/local-access-session";
-const terminalBackdrop = require("./assets/background.peakpact.png");
+const terminalBackdrop = require("./assets/elite-backdrop.jpeg");
 const peakpactIcon = require("./assets/icon.png");
 const peakpactAdaptiveIcon = require("./assets/adaptive-icon.png");
-const peakpactSplash = require("./assets/splash-icon.png");
+const peakpactSplash = require("./assets/elite-splash.jpg");
 
 type PactLogEntry = {
   id: string;
@@ -547,7 +547,9 @@ function TutorialOverlay({
             { borderColor: `${accent}55`, backgroundColor: `${accent}0D` },
           ]}
         >
-          <Text style={[_tutSS.hintTxt, { color: accent }]}>▶ {current.hint}</Text>
+          <Text style={[_tutSS.hintTxt, { color: accent }]}>
+            ▶ {current.hint}
+          </Text>
         </View>
         <View style={_tutSS.actions}>
           <Pressable
@@ -3018,7 +3020,7 @@ export default function App() {
   // Boot sequence shown once on first launch — renders before auth, covers the full screen
   if (bootReady !== true) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: "#000000" }]}> 
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: "#000000" }]}>
         <StatusBar style="light" hidden />
         <BootSequence
           onComplete={() => {
@@ -3035,7 +3037,7 @@ export default function App() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
         <ImageBackground
-          source={require("./assets/background.peakpact.png")}
+          source={terminalBackdrop}
           resizeMode="cover"
           style={styles.authBootShell}
         >
@@ -3126,12 +3128,15 @@ export default function App() {
             { borderColor: accent, boxShadow: `0 0 18px ${accent}` },
           ]}
         />
+        <View style={styles.fxGlow} />
         <ScanlineOverlay />
         {isWeb && (
           <View
             style={[styles.webGlobalHeader, { borderColor: `${accent}44` }]}
           >
-            <Text style={[styles.webGlobalTitle, { color: PEAK_CRIMSON }]}>▲ CRIMSON LEDGER WEBSYSTEM</Text>
+            <Text style={[styles.webGlobalTitle, { color: PEAK_CRIMSON }]}>
+              ▲ CRIMSON LEDGER WEBSYSTEM
+            </Text>
             <View style={styles.webGlobalCenter}>
               <Text
                 style={[
@@ -3146,7 +3151,9 @@ export default function App() {
                 {"LOCAL TIME: " + militaryTime}
               </Text>
             </View>
-            <Text style={[styles.webGlobalAuth, { color: accent }]}>SYS_AUTH: OVERSEER UPLINK</Text>
+            <Text style={[styles.webGlobalAuth, { color: accent }]}>
+              SYS_AUTH: OVERSEER UPLINK
+            </Text>
           </View>
         )}
         <TabBar active={activeTab} onPress={handleTabPress} accent={accent} />
@@ -3156,7 +3163,181 @@ export default function App() {
               style={styles.webLeftCol}
               contentContainerStyle={styles.webColContent}
             >
-              <View style={[styles.bentoWindow, { borderColor: accent }]}>...
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>OPERATOR LEDGER</Text>
+                <Text style={[styles.webLedgerPP, { color: accent }]}>
+                  {displayPp}
+                </Text>
+                <Text style={styles.webLedgerPPLabel}>PP BALANCE</Text>
+                <View style={styles.webLedgerSpacer} />
+                <Text style={[styles.webLedgerDetail, { color: accent }]}>
+                  MEDIATOR: {operatorCodename}
+                </Text>
+                <Text style={[styles.webLedgerDetail, { color: accent }]}>
+                  LVL: {state.level}
+                </Text>
+                <Text style={[styles.webLedgerDetail, { color: accent }]}>
+                  STREAK: {state.streak}
+                </Text>
+                <Text style={[styles.webLedgerDetail, { color: accent }]}>
+                  XP: {displayXp}
+                </Text>
+                <View style={styles.progressBarShell}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${progressionView.nextLevelProgress.percent}%`,
+                        backgroundColor: accent,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.bentoDetailMini}>
+                  LEVEL PROGRESS: {progressionView.nextLevelProgress.percent}%
+                </Text>
+              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>LOGS</Text>
+                {state.terminalLines.slice(-6).map((line, i) => (
+                  <Text key={i} style={[styles.logLine, { color: accent }]}>
+                    {line}
+                  </Text>
+                ))}
+                {state.terminalLines.length === 0 && (
+                  <Text style={styles.bentoDetailMini}>
+                    AWAITING PACT ACTIVITY...
+                  </Text>
+                )}
+              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>SEARCH RESULTS</Text>
+                <View style={styles.webSearchHeader}>
+                  <Text style={[styles.webSearchCol, { flex: 2 }]}>
+                    ORDERHANDLE
+                  </Text>
+                  <Text style={styles.webSearchCol}>LIVE PP</Text>
+                  <Text style={styles.webSearchCol}>LIVE PP</Text>
+                </View>
+                {state.queue.slice(-5).map((entry) => (
+                  <View key={entry.id} style={styles.webSearchRow}>
+                    <Text style={[styles.webSearchCell, { flex: 2 }]}>
+                      {entry.timestamp.slice(0, 10)}
+                    </Text>
+                    <Text style={styles.webSearchCell}>{state.pp}</Text>
+                    <Text
+                      style={[
+                        styles.webSearchCell,
+                        { color: entry.pp > 0 ? accent : PEAK_CRIMSON },
+                      ]}
+                    >
+                      {entry.pp > 0 ? `+${entry.pp}` : entry.pp} PP
+                    </Text>
+                  </View>
+                ))}
+                {state.queue.length === 0 && (
+                  <Text style={styles.bentoDetailMini}>
+                    NO PACT HISTORY YET
+                  </Text>
+                )}
+              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>SYSTEM GALLERY</Text>
+                {designTemplates.map((template) => {
+                  const ownedTpl = ownedDesignTemplates.includes(template.id);
+                  const selectedTpl = selectedDesignTemplateId === template.id;
+                  return (
+                    <View
+                      key={template.id}
+                      style={[
+                        styles.webGalleryItem,
+                        { borderColor: selectedTpl ? accent : `${accent}33` },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.webGalleryColor,
+                          { backgroundColor: template.accent },
+                        ]}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[styles.webGalleryName, { color: accent }]}
+                        >
+                          {template.name}
+                        </Text>
+                        <Text style={styles.webGalleryPrice}>
+                          {template.costPP > 0
+                            ? `${template.costPP} PP`
+                            : "UNLOCKED"}
+                        </Text>
+                      </View>
+                      {selectedTpl ? (
+                        <Text
+                          style={[styles.webGalleryState, { color: accent }]}
+                        >
+                          ACTIVE
+                        </Text>
+                      ) : ownedTpl ? (
+                        <Pressable
+                          onPress={() =>
+                            setSelectedDesignTemplateId(
+                              template.id as DesignTemplateId,
+                            )
+                          }
+                        >
+                          <Text
+                            style={[styles.webGalleryState, { color: accent }]}
+                          >
+                            APPLY
+                          </Text>
+                        </Pressable>
+                      ) : (
+                        <Pressable
+                          onPress={() =>
+                            handleTemplatePurchase(
+                              template.id as DesignTemplateId,
+                            )
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.webGalleryState,
+                              {
+                                color:
+                                  state.pp >= template.costPP
+                                    ? accent
+                                    : PEAK_CRIMSON,
+                              },
+                            ]}
+                          >
+                            BUY
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  );
+                })}
+                {templateMessage ? (
+                  <Text
+                    style={[
+                      styles.bentoDetailMini,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    {templateMessage}
+                  </Text>
+                ) : null}
+                <Pressable
+                  style={[styles.webGalleryUpgradeBtn, { borderColor: accent }]}
+                  onPress={() => setShowMonetization(true)}
+                >
+                  <Text
+                    style={[styles.webGalleryUpgradeText, { color: accent }]}
+                  >
+                    PREMIUM UPGRADE
+                  </Text>
+                </Pressable>
               </View>
             </ScrollView>
           )}
@@ -3168,7 +3349,2002 @@ export default function App() {
             showsVerticalScrollIndicator={false}
             overScrollMode="always"
           >
-            <View style={styles.appShell}>...
+            <View style={styles.appShell}>
+              {/* SYS_STATUS micro strip */}
+              <View style={styles.sysStatusStrip}>
+                <Text
+                  style={[
+                    styles.sysStatusText,
+                    { color: state.redState ? PEAK_CRIMSON : accent },
+                  ]}
+                >
+                  {"SYS_STATUS: " +
+                    (state.redState
+                      ? "\u26a0 REDSTATE"
+                      : state.offline
+                        ? "OFFLINE"
+                        : "OPTIMAL")}
+                </Text>
+                <Text style={styles.sysStatusText}>
+                  {"LOCAL TIME: " + militaryTime}
+                </Text>
+                <Text style={styles.sysStatusText}>
+                  {isWeb
+                    ? "SYS_AUTH: OVERSEER UPLINK"
+                    : "SYS_AUTH: FIELD UPLINK"}
+                </Text>
+              </View>
+
+              {/* Bento header: Operator Ledger + Severance Timer */}
+              <View
+                style={[
+                  styles.headerBentoRow,
+                  state.levelFlash && styles.headerFlash,
+                ]}
+              >
+                <View
+                  style={[styles.operatorLedgerPane, { borderColor: accent }]}
+                >
+                  <Text style={styles.bentoWindowTitle}>OPERATOR LEDGER</Text>
+                  <Text style={[styles.bentoOperatorId, { color: accent }]}>
+                    MEDIATOR: {operatorCodename}
+                  </Text>
+                  <Text style={[styles.bentoLvlBadge, { color: accent }]}>
+                    LVL: {state.level}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.bentoPPHero,
+                      { color: state.redState ? PEAK_CRIMSON : accent },
+                    ]}
+                  >
+                    {displayPp} PP
+                  </Text>
+                  <Text style={styles.bentoProtocolLine}>
+                    PROTOCOL: {state.protocolArchetypeName}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.severanceTimerPane,
+                    { borderColor: state.redState ? PEAK_CRIMSON : accent },
+                  ]}
+                >
+                  <Text style={styles.bentoWindowTitle}>SEVERANCE TIMER</Text>
+                  <Text
+                    style={[
+                      styles.bentoCountdown,
+                      { color: state.redState ? PEAK_CRIMSON : accent },
+                    ]}
+                  >
+                    {missionCountdown}
+                  </Text>
+                  <Text style={[styles.bentoTimerLabel, { color: accent }]}>
+                    DAILY RESET
+                  </Text>
+                  <Text style={[styles.bentoStreakText, { color: accent }]}>
+                    STREAK: {state.streak}
+                  </Text>
+                  <Text style={[styles.bentoXpText, { color: accent }]}>
+                    XP: {displayXp}
+                  </Text>
+                </View>
+              </View>
+
+              {recoveryVisualState.isRecoveryVisualActive ? (
+                <View style={[styles.recoveryBanner, { borderColor: accent }]}>
+                  <Text style={[styles.recoveryBannerText, { color: accent }]}>
+                    RECOVERY WINDOW STABLE / THREAT LEVEL CALMED
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Active Pact Ring — dual view (fractured + sealed) */}
+              <View style={[styles.pactRingSection, { borderColor: accent }]}>
+                <Text style={styles.pactRingSectionTitle}>ACTIVE PACT</Text>
+                <View style={styles.pactRingDualView}>
+                  <View style={styles.pactRingHalf}>
+                    <PactRing
+                      accent={PEAK_CRIMSON}
+                      pactComplete={false}
+                      redActive={state.redState}
+                      size={150}
+                    />
+                    <Text
+                      style={[styles.pactRingLabel, { color: PEAK_CRIMSON }]}
+                    >
+                      Fractured Crimson
+                    </Text>
+                    <Text
+                      style={[styles.pactRingSubLabel, { color: BONE_WHITE }]}
+                    >
+                      Pact Ring
+                    </Text>
+                  </View>
+                  <View style={styles.pactRingHalf}>
+                    <PactRing
+                      accent={BONE_WHITE}
+                      pactComplete={true}
+                      redActive={false}
+                      size={150}
+                    />
+                    <Text style={[styles.pactRingLabel, { color: BONE_WHITE }]}>
+                      Perfect, Unbroken
+                    </Text>
+                    <Text
+                      style={[styles.pactRingSubLabel, { color: BONE_WHITE }]}
+                    >
+                      Bone White Ring
+                    </Text>
+                  </View>
+                </View>
+                <Text
+                  style={[styles.pactRingMissionText, { color: accent }]}
+                >{`> MISSION: ${state.missionTitle.toUpperCase()} [${state.missionTimeWindowMinutes} MIN]`}</Text>
+                <Text style={[styles.pactRingVerifyHint, { color: accent }]}>
+                  {"[ " +
+                    (state.redState
+                      ? "RECOVERY REQUIRED"
+                      : "HOLD TO SIGN / SEAL") +
+                    " ]"}
+                </Text>
+              </View>
+
+              {activeTab !== "PACT" && (
+                <SectionIntro tab={activeTab} accent={accent} />
+              )}
+              <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
+                <Animated.View
+                  style={[
+                    styles.heroCard,
+                    heroCardVariantStyle,
+                    heroTemplateAnimatedStyle,
+                    { borderColor: accent },
+                    { transform: [{ translateY: heroFloat }] },
+                  ]}
+                >
+                  <View style={styles.heroTopRow}>
+                    <View
+                      style={[
+                        styles.heroPill,
+                        heroPillVariantStyle,
+                        { borderColor: accent },
+                      ]}
+                    >
+                      <Text style={[styles.heroPillText, { color: accent }]}>
+                        COMMAND CORE
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.heroPill,
+                        heroPillVariantStyle,
+                        { borderColor: accent },
+                      ]}
+                    >
+                      <Text style={[styles.heroPillText, { color: accent }]}>
+                        {heroSummary.statusLabel}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.heroTitle}>{heroSummary.title}</Text>
+                  <Text style={styles.heroSubtitle}>
+                    {heroSummary.subtitle}
+                  </Text>
+                  <Text style={[styles.heroEmphasis, { color: accent }]}>
+                    {heroSummary.emphasis}
+                  </Text>
+                  <View
+                    style={[
+                      styles.heroMissionRow,
+                      heroMissionRowVariantStyle,
+                      { borderColor: accent },
+                    ]}
+                  >
+                    <Text style={styles.heroMissionLabel}>ACTIVE MISSION</Text>
+                    <Text style={styles.heroMissionText}>
+                      {state.missionTitle}
+                    </Text>
+                  </View>
+                </Animated.View>
+              </View>
+
+              <View
+                style={{ display: activeTab === "PROFILE" ? "flex" : "none" }}
+              >
+                <View
+                  style={[
+                    styles.panel,
+                    styles.launchShowcasePanel,
+                    { borderColor: accent },
+                  ]}
+                >
+                  <ImageBackground
+                    source={terminalBackdrop}
+                    resizeMode="cover"
+                    style={styles.launchShowcaseArt}
+                    imageStyle={styles.launchShowcaseArtImage}
+                  >
+                    <View style={styles.launchShowcaseVeil} />
+                    <View style={styles.launchShowcaseContent}>
+                      <View style={styles.launchShowcaseHeaderRow}>
+                        <BrandMark accent={accent} size={86} />
+                        <View style={styles.launchShowcaseHeaderCopy}>
+                          <Text
+                            style={[
+                              styles.panelTitle,
+                              { color: accent, marginBottom: 2 },
+                            ]}
+                          >
+                            {launchCopyPack.appTitleOptions[0]}
+                          </Text>
+                          <Text style={styles.launchShowcaseSubtitle}>
+                            Elite launch visuals curated from the current asset
+                            set.
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.launchShowcaseMetaRow}>
+                        <View
+                          style={[
+                            styles.launchShowcaseMetaChip,
+                            { borderColor: accent },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.launchShowcaseMetaText,
+                              { color: accent },
+                            ]}
+                          >
+                            FOUNDER GRADE
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.launchShowcaseMetaChip,
+                            { borderColor: accent },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.launchShowcaseMetaText,
+                              { color: accent },
+                            ]}
+                          >
+                            VERIFIED ASSET DECK
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.launchShowcaseMetaChip,
+                            { borderColor: accent },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.launchShowcaseMetaText,
+                              { color: accent },
+                            ]}
+                          >
+                            PREMIUM READY
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.launchShowcaseCaptionRow}>
+                        {launchCopyPack.screenshotCaptions
+                          .slice(0, 3)
+                          .map((caption) => (
+                            <View
+                              key={caption}
+                              style={[
+                                styles.launchShowcaseCaptionChip,
+                                { borderColor: accent },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.launchShowcaseCaptionText,
+                                  { color: accent },
+                                ]}
+                              >
+                                {caption}
+                              </Text>
+                            </View>
+                          ))}
+                      </View>
+                      <Text style={styles.launchShowcaseBody}>
+                        {launchCopyPack.shortDescription}
+                      </Text>
+                    </View>
+                  </ImageBackground>
+                </View>
+
+                <View style={styles.launchMediaRail}>
+                  <View
+                    style={[styles.launchMediaCard, { borderColor: accent }]}
+                  >
+                    <ImageBackground
+                      source={peakpactSplash}
+                      resizeMode="cover"
+                      style={styles.launchMediaArt}
+                      imageStyle={styles.launchMediaArtImage}
+                    >
+                      <View style={styles.launchMediaVeil} />
+                      <Text
+                        style={[styles.launchMediaLabel, { color: accent }]}
+                      >
+                        SPLASH
+                      </Text>
+                    </ImageBackground>
+                  </View>
+                  <View
+                    style={[styles.launchMediaCard, { borderColor: accent }]}
+                  >
+                    <ImageBackground
+                      source={peakpactIcon}
+                      resizeMode="contain"
+                      style={styles.launchMediaArt}
+                      imageStyle={styles.launchMediaIconImage}
+                    >
+                      <View style={styles.launchMediaVeil} />
+                      <Text
+                        style={[styles.launchMediaLabel, { color: accent }]}
+                      >
+                        ICON
+                      </Text>
+                    </ImageBackground>
+                  </View>
+                  <View
+                    style={[styles.launchMediaCard, { borderColor: accent }]}
+                  >
+                    <ImageBackground
+                      source={peakpactAdaptiveIcon}
+                      resizeMode="contain"
+                      style={styles.launchMediaArt}
+                      imageStyle={styles.launchMediaIconImage}
+                    >
+                      <View style={styles.launchMediaVeil} />
+                      <Text
+                        style={[styles.launchMediaLabel, { color: accent }]}
+                      >
+                        ANDROID
+                      </Text>
+                    </ImageBackground>
+                  </View>
+                </View>
+              </View>
+
+              <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
+                <Animated.View
+                  style={[
+                    styles.statsRow,
+                    statsRowVariantStyle,
+                    statsTemplateAnimatedStyle,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.statBox,
+                      statBoxVariantStyle,
+                      { borderColor: accent },
+                    ]}
+                  >
+                    <Text style={[styles.statLabel, { color: accent }]}>
+                      PP BALANCE
+                    </Text>
+                    <Text
+                      style={[
+                        styles.statValue,
+                        { color: state.redState ? PEAK_CRIMSON : accent },
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      {state.pp}
+                    </Text>
+                    <Text style={styles.statSubLabel}>
+                      {eliteOverrideActive ? "\u221e ELITE" : "POINTS"}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statBox,
+                      statBoxVariantStyle,
+                      { borderColor: accent },
+                    ]}
+                  >
+                    <Text style={[styles.statLabel, { color: accent }]}>
+                      STREAK
+                    </Text>
+                    <Text style={[styles.statValue, { color: accent }]}>
+                      {state.streak}
+                    </Text>
+                    <Text style={styles.statSubLabel}>DAYS</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statBox,
+                      statBoxVariantStyle,
+                      { borderColor: accent },
+                    ]}
+                  >
+                    <Text style={[styles.statLabel, { color: accent }]}>
+                      LEVEL
+                    </Text>
+                    <Text style={[styles.statValue, { color: accent }]}>
+                      {state.level}
+                    </Text>
+                    <Text style={styles.statSubLabel}>
+                      {founderPrivilegesActive ? "FOUNDER" : `${state.xp} XP`}
+                    </Text>
+                  </View>
+                </Animated.View>
+
+                <View
+                  style={[styles.dailyLoopCard, { borderColor: `${accent}55` }]}
+                >
+                  <View style={styles.dailyLoopHeaderRow}>
+                    <Text style={[styles.dailyLoopTitle, { color: accent }]}>
+                      {dailyLoopGuide.title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.dailyLoopNextBadge,
+                        { borderColor: `${accent}55` },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dailyLoopNextBadgeText,
+                          { color: accent },
+                        ]}
+                      >
+                        UP NEXT
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.dailyLoopBody}>
+                    {dailyLoopGuide.body}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dailyLoopNextAction,
+                      {
+                        color: recoveryVisualState.isRecoveryVisualActive
+                          ? "#7FE7C9"
+                          : accent,
+                      },
+                    ]}
+                  >
+                    {dailyLoopGuide.nextAction}
+                  </Text>
+                  <View style={styles.dailyLoopSteps}>
+                    {dailyLoopGuide.steps.map((step, index) => (
+                      <View key={step.title} style={styles.dailyLoopStep}>
+                        <Text
+                          style={[styles.dailyLoopStepNum, { color: accent }]}
+                        >
+                          {index + 1}
+                        </Text>
+                        <View style={styles.dailyLoopStepContent}>
+                          <Text style={styles.dailyLoopStepTitle}>
+                            {step.title}
+                          </Text>
+                          <Text style={styles.dailyLoopStepBody}>
+                            {step.body}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                {state.levelFlash ? (
+                  <View style={styles.levelBanner}>
+                    <Text style={styles.levelBannerText}>
+                      LEVEL UP / GLITCH LOCK
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ ELITE DAILY CHALLENGE ]
+                  </Text>
+                  <View
+                    style={[
+                      styles.challengeCard,
+                      { borderColor: dailyChallenge.accent },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.challengeTitle,
+                        { color: dailyChallenge.accent },
+                      ]}
+                    >
+                      {dailyChallenge.title}
+                    </Text>
+                    <Text style={styles.challengeBody}>
+                      {dailyChallenge.body}
+                    </Text>
+                    <Text style={styles.challengeReward}>
+                      REWARD:{" "}
+                      {effectivePlan === "PREMIUM"
+                        ? dailyChallenge.premiumRewardPP
+                        : dailyChallenge.rewardPP}{" "}
+                      PP
+                    </Text>
+                    <View style={styles.progressBarShell}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${Math.min(100, Math.round((dailyChallenge.progress.current / dailyChallenge.progress.target) * 100))}%`,
+                            backgroundColor: dailyChallenge.accent,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.progressionSummaryDetail}>
+                      {dailyChallenge.progress.current}/
+                      {dailyChallenge.progress.target} TO COMPLETE
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.challengeCard,
+                      { borderColor: accent, marginTop: 8 },
+                    ]}
+                  >
+                    <Text style={[styles.challengeTitle, { color: accent }]}>
+                      {premiumBoostSummary.label}
+                    </Text>
+                    <Text style={styles.challengeBody}>
+                      {premiumBoostSummary.body}
+                    </Text>
+                    <Text style={styles.challengeReward}>
+                      BONUS: {premiumBoostSummary.bonusPP} PP
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={{ display: activeTab === "STORE" ? "flex" : "none" }}
+              >
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ DESIGN TEMPLATES // PREMIUM VISUALS ]
+                  </Text>
+                  {templateMessage ? (
+                    <Text
+                      style={[
+                        styles.storeStatus,
+                        { color: accent, marginBottom: 8 },
+                      ]}
+                    >
+                      {templateMessage}
+                    </Text>
+                  ) : null}
+                  {designTemplates.map((template) => {
+                    const owned = ownedDesignTemplates.includes(template.id);
+                    const selected = selectedDesignTemplateId === template.id;
+                    const affordable = state.pp >= template.costPP;
+                    const tierLabel = getTemplateTierLabel(template.costPP);
+                    const valueCue = getTemplateValueCue(template.costPP);
+                    const structureLabel = getTemplateStructureLabel(
+                      template.id,
+                    );
+                    const ornamentPattern = getTemplateOrnamentPattern(
+                      template.id,
+                    );
+                    const cardVariantStyle = getTemplateCardVariantStyle(
+                      template.id,
+                    );
+                    const swatchVariantStyle = getTemplateSwatchVariantStyle(
+                      template.id,
+                    );
+                    const actionVariantStyle = getTemplateActionVariantStyle(
+                      template.id,
+                    );
+                    return (
+                      <View
+                        key={template.id}
+                        style={[
+                          styles.templateCard,
+                          cardVariantStyle,
+                          {
+                            borderColor: selected
+                              ? accent
+                              : "rgba(0,255,0,0.18)",
+                            backgroundColor: selected
+                              ? "rgba(0,255,0,0.06)"
+                              : "rgba(0,0,0,0.32)",
+                          },
+                        ]}
+                      >
+                        <View style={styles.templateHeaderRow}>
+                          <View
+                            style={[
+                              styles.templateSwatch,
+                              swatchVariantStyle,
+                              {
+                                backgroundColor: template.card,
+                                borderColor: template.accent,
+                              },
+                            ]}
+                          />
+                          <View style={styles.templateMeta}>
+                            <Text
+                              style={[styles.templateTitle, { color: accent }]}
+                            >
+                              {template.name}
+                            </Text>
+                            <Text style={styles.templateBody}>
+                              {template.description}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.templateSignatureRow}>
+                          <Text
+                            style={[
+                              styles.templateSignatureLabel,
+                              { color: accent },
+                            ]}
+                          >
+                            {structureLabel}
+                          </Text>
+                          <View style={styles.templateSignatureTrack}>
+                            {ornamentPattern.map((size, index) => (
+                              <View
+                                key={`${template.id}-ornament-${index}`}
+                                style={[
+                                  styles.templateSignatureNode,
+                                  {
+                                    width: size,
+                                    borderColor: selected
+                                      ? accent
+                                      : "rgba(0,255,0,0.28)",
+                                    backgroundColor: selected
+                                      ? "rgba(0,255,0,0.18)"
+                                      : "rgba(0,0,0,0.34)",
+                                  },
+                                ]}
+                              />
+                            ))}
+                          </View>
+                        </View>
+                        <View style={styles.templateMetaRow}>
+                          <Text
+                            style={[
+                              styles.templateTierPill,
+                              { borderColor: accent, color: accent },
+                            ]}
+                          >
+                            {tierLabel}
+                          </Text>
+                          <Text style={styles.templateStateLabel}>
+                            {selected ? "ACTIVE" : owned ? "OWNED" : "LOCKED"}
+                          </Text>
+                        </View>
+                        <Text style={styles.templateValueCue}>{valueCue}</Text>
+                        <View style={styles.templateFooterRow}>
+                          <Text
+                            style={[
+                              styles.templatePrice,
+                              { color: template.costPP > 0 ? AMBER : accent },
+                            ]}
+                          >
+                            {" "}
+                            {template.costPP > 0
+                              ? `${template.costPP} PP`
+                              : "BASE"}{" "}
+                          </Text>
+                          {selected ? (
+                            <View
+                              style={[
+                                styles.templateAction,
+                                actionVariantStyle,
+                                { borderColor: accent },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.templateActionText,
+                                  { color: accent },
+                                ]}
+                              >
+                                ACTIVE
+                              </Text>
+                            </View>
+                          ) : owned ? (
+                            <Pressable
+                              style={[
+                                styles.templateAction,
+                                actionVariantStyle,
+                                { borderColor: accent },
+                              ]}
+                              onPress={() =>
+                                setSelectedDesignTemplateId(template.id)
+                              }
+                            >
+                              <Text
+                                style={[
+                                  styles.templateActionText,
+                                  { color: accent },
+                                ]}
+                              >
+                                APPLY
+                              </Text>
+                            </Pressable>
+                          ) : (
+                            <Pressable
+                              style={[
+                                styles.templateAction,
+                                actionVariantStyle,
+                                { borderColor: affordable ? accent : CRIMSON },
+                              ]}
+                              onPress={() =>
+                                handleTemplatePurchase(
+                                  template.id as DesignTemplateId,
+                                )
+                              }
+                              disabled={!affordable}
+                            >
+                              <Text
+                                style={[
+                                  styles.templateActionText,
+                                  { color: affordable ? accent : CRIMSON },
+                                ]}
+                              >
+                                BUY
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
+                
+                {/* ── CURRENTLY ACTIVE CONTRACT CARD ─────────────────────── */}
+                {state.activeContractTask ? (
+                  <View style={[styles.panel, { borderColor: accent, backgroundColor: "rgba(0, 255, 0, 0.08)", marginBottom: 12 }]}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Text style={[styles.panelTitle, { color: accent, marginBottom: 0 }]}>
+                        [ CURRENTLY ACTIVE CONTRACT ]
+                      </Text>
+                      <Text style={{ color: accent, fontFamily: "monospace", fontSize: 11, fontWeight: "700" }}>
+                        {missionCountdown}
+                      </Text>
+                    </View>
+
+                    <Text style={{ color: "#F4F4F5", fontFamily: "monospace", fontSize: 14, fontWeight: "700", marginBottom: 6 }}>
+                      ▶ {state.activeContractTask}
+                    </Text>
+
+                    <View style={{ flexDirection: "row", gap: 12 }}>
+                      <Text style={{ color: "#C0C0C8", fontFamily: "monospace", fontSize: 11 }}>
+                        STAKE: <Text style={{ color: accent, fontWeight: "700" }}>{state.activeContractStake ?? 0} PP</Text>
+                      </Text>
+                      <Text style={{ color: "#C0C0C8", fontFamily: "monospace", fontSize: 11 }}>
+                        STATUS: <Text style={{ color: accent, fontWeight: "700" }}>IN PROGRESS</Text>
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ TACTICAL UPLINK ]
+                  </Text>
+                  <Text style={styles.storeTitle}>Mission Node</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { borderColor: accent, marginBottom: 8 },
+                    ]}
+                    value={contractTask}
+                    onChangeText={setContractTask}
+                    placeholder="What must be done?"
+                    placeholderTextColor="rgba(244,244,245,0.32)"
+                  />
+                  <Text style={styles.storeTitle}>Duration (minutes)</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { borderColor: accent, marginBottom: 8 },
+                    ]}
+                    value={contractDuration}
+                    onChangeText={setContractDuration}
+                    placeholder="45"
+                    keyboardType="numeric"
+                    placeholderTextColor="rgba(244,244,245,0.32)"
+                  />
+                  <Text style={styles.storeTitle}>Risk Stake (PP)</Text>
+                  <TextInput
+                    style={[styles.input, { borderColor: accent }]}
+                    value={contractStake}
+                    onChangeText={setContractStake}
+                    placeholder="20"
+                    keyboardType="numeric"
+                    placeholderTextColor="rgba(244,244,245,0.32)"
+                  />
+                </View>
+
+                <View style={styles.buttonRow}>
+                  <TemplatedPressable
+                    templateId={selectedDesignTemplateId}
+                    style={[styles.buttonPrimary, { backgroundColor: accent }]}
+                    onPress={submitPact}
+                  >
+                    <Text style={styles.buttonText}>
+                      {getLocalizedText("submitPact", language)}
+                    </Text>
+                  </TemplatedPressable>
+                  <TemplatedPressable
+                    templateId={selectedDesignTemplateId}
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={toggleOffline}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      {state.offline ? "DISABLE OFFLINE" : "ENABLE OFFLINE"}
+                    </Text>
+                  </TemplatedPressable>
+                </View>
+
+                <View style={styles.buttonRow}>
+                  <TemplatedPressable
+                    templateId={selectedDesignTemplateId}
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={loadMissionIntoContract}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      LOAD MISSION
+                    </Text>
+                  </TemplatedPressable>
+                  <TemplatedPressable
+                    templateId={selectedDesignTemplateId}
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={toggleOperatorManual}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      {getLocalizedText("manual", language)}
+                    </Text>
+                  </TemplatedPressable>
+                </View>
+
+                <View style={styles.buttonRow}>
+                  <Pressable
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={toggleRecording}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      {isRecording ? "STOP VOICE" : "RECORD VOICE"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={syncQueue}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      {getLocalizedText("syncQueue", language)} ({queueCount})
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.buttonRow}>
+                  <Pressable
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={toggleMonetization}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      {getLocalizedText("terminalUpgrades", language)}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.buttonSecondary, { borderColor: accent }]}
+                    onPress={overclockMission}
+                  >
+                    <Text style={[styles.buttonText, { color: accent }]}>
+                      [ OVERCLOCK (+1H) // 15 PP ]
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {state.redState ? (
+                  <View style={styles.buttonRow}>
+                    <TemplatedPressable
+                      templateId={selectedDesignTemplateId}
+                      style={[
+                        styles.buttonSecondary,
+                        {
+                          borderColor:
+                            recoveryVisualState.isRecoveryVisualActive
+                              ? "#7FE7C9"
+                              : CRIMSON,
+                          backgroundColor:
+                            recoveryVisualState.isRecoveryVisualActive
+                              ? "rgba(127, 231, 201, 0.14)"
+                              : "rgba(0, 0, 0, 0.52)",
+                        },
+                      ]}
+                      onPress={stabilizeRedFlash}
+                      disabled={
+                        !stabilizationUsage.canUse ||
+                        (!eliteOverrideActive && state.pp < stabilizationCost)
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.buttonText,
+                          {
+                            color: recoveryVisualState.isRecoveryVisualActive
+                              ? "#7FE7C9"
+                              : CRIMSON,
+                          },
+                        ]}
+                      >
+                        {recoveryButtonLabel}
+                      </Text>
+                    </TemplatedPressable>
+                  </View>
+                ) : null}
+                
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <View style={styles.logBox}>
+                    {state.terminalLines.map((line, index) => (
+                      <Text
+                        key={`${line}-${index}`}
+                        style={[styles.logLine, { color: accent }]}
+                      >
+                        {line}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={[styles.input, { borderColor: accent }]}
+                    value={draft}
+                    onChangeText={setDraft}
+                    placeholder="Record the completed task..."
+                    placeholderTextColor="rgba(244,244,245,0.32)"
+                    multiline
+                  />
+                  <View style={styles.inputHelperRow}>
+                    <Text style={styles.inputHint}>
+                      {getLocalizedText("sampleHint", language)}
+                    </Text>
+                    <Pressable
+                      style={[
+                        styles.inputHelperButton,
+                        { borderColor: accent },
+                      ]}
+                      onPress={loadSampleDraft}
+                    >
+                      <Text
+                        style={[
+                          styles.inputHelperButtonText,
+                          { color: accent },
+                        ]}
+                      >
+                        {getLocalizedText("loadSample", language)}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View style={styles.buttonRow}>
+                  <Pressable
+                    style={[styles.buttonSecondary, { borderColor: CRIMSON }]}
+                    onPress={lockTerminal}
+                  >
+                    <Text style={[styles.buttonText, { color: CRIMSON }]}>
+                      {getLocalizedText("lockTerminal", language)}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <MonetizationPanel
+                  visible={showMonetization}
+                  accent={accent}
+                  plan={effectivePlan}
+                />
+
+                <View
+                  style={[
+                    styles.panel,
+                    styles.statusPanel,
+                    { borderColor: accent },
+                  ]}
+                >
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ {getLocalizedText("statusLabel", language)} ]
+                  </Text>
+                  <Text style={styles.storeTitle}>{statusMessage}</Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    {getLocalizedText("languageLabel", language)}:{" "}
+                    {
+                      getSupportedLanguages().find(
+                        (option) => option.code === language,
+                      )?.label
+                    }
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    PLAN: {planStatusLabel}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    RECOVERY WINDOWS: {stabilizationUsage.remaining}/
+                    {DAILY_STABILIZATION_LIMIT} TODAY
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: CRIMSON, marginTop: 6 },
+                    ]}
+                  >
+                    {disciplineBanner}
+                  </Text>
+                  <Text
+                    style={[styles.storeTitle, { color: accent, marginTop: 6 }]}
+                  >
+                    [ MISSION TIMER: {missionCountdown} REMAINING ]
+                  </Text>
+                  <Text
+                    style={[styles.storeTitle, { color: accent, marginTop: 6 }]}
+                  >
+                    [ ACTIVE MISSION: {state.missionTitle} ]
+                  </Text>
+                  <Text style={styles.storeTitle}>
+                    {state.missionDescription}
+                  </Text>
+                  <View style={styles.insightBox}>
+                    <Text
+                      style={[
+                        styles.panelTitle,
+                        { color: accent, marginBottom: 4 },
+                      ]}
+                    >
+                      [ {getLocalizedText("operatorInsight", language)} ]
+                    </Text>
+                    <Text style={styles.storeTitle}>
+                      {operatorInsight.title}
+                    </Text>
+                    <Text style={[styles.storeStatus, { marginTop: 4 }]}>
+                      {operatorInsight.body}
+                    </Text>
+                  </View>
+                  <View style={styles.guidanceBox}>
+                    <Text
+                      style={[
+                        styles.panelTitle,
+                        { color: accent, marginBottom: 4 },
+                      ]}
+                    >
+                      [ {getLocalizedText("guidance", language)} ]
+                    </Text>
+                    <Text style={styles.storeTitle}>
+                      {missionGuidance.title}
+                    </Text>
+                    <Text style={[styles.storeStatus, { marginTop: 4 }]}>
+                      {missionGuidance.body}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.storeStatus,
+                        { color: accent, marginTop: 6 },
+                      ]}
+                    >
+                      NEXT ACTION: {missionGuidance.nextAction}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    RISK: {state.missionRisk} • BONUS: +
+                    {state.missionRewardBonus} PP • WINDOW:{" "}
+                    {state.missionTimeWindowMinutes}m
+                  </Text>
+                  <Text style={styles.storeTitle}>
+                    SUGGESTED CONTRACT: {state.missionContractTemplate}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    RECOMMENDED STAKE: {state.missionRecommendedStake} PP
+                  </Text>
+                  {state.activeGlitch ? (
+                    <Text
+                      style={[
+                        styles.storeStatus,
+                        { color: CRIMSON, marginTop: 6 },
+                      ]}
+                    >
+                      GLITCH: {state.activeGlitch}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ CAPTAINS OVERSEER ]
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeTitle,
+                      { color: accent, marginBottom: 6 },
+                    ]}
+                  >
+                    PROTOCOL: {state.protocolArchetypeName}
+                  </Text>
+                  <Text style={styles.storeTitle}>
+                    {state.protocolArchetypeDescription}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    STATUS EFFECT: {state.protocolStatusEffect}
+                  </Text>
+                  {statusEffectTags.length > 0 ? (
+                    <View style={styles.statusTagRow}>
+                      {statusEffectTags.map((tag) => (
+                        <View key={tag.label} style={styles.statusTag}>
+                          <Text style={styles.statusTagText}>{tag.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                  {state.overseerLines.map((line, index) => (
+                    <Text
+                      key={`${line}-${index}`}
+                      style={[styles.logLine, { color: accent }]}
+                    >
+                      {line}
+                    </Text>
+                  ))}
+                </View>
+
+                {showOperatorManual ? (
+                  <View style={[styles.panel, { borderColor: accent }]}>
+                    <Text style={[styles.panelTitle, { color: accent }]}>
+                      [ OPERATOR MANUAL ]
+                    </Text>
+                    {operatorManualEntries.map((entry) => (
+                      <View key={entry.title} style={styles.manualEntry}>
+                        <Text style={styles.storeTitle}>{entry.title}</Text>
+                        <Text style={styles.storeStatus}>{entry.body}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+
+              <View
+                style={{ display: activeTab === "PROFILE" ? "flex" : "none" }}
+              >
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <View
+                    style={[
+                      styles.ascensionBanner,
+                      state.levelFlash && styles.ascensionBannerFlash,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.panelTitle,
+                        { color: accent, marginBottom: 4 },
+                      ]}
+                    >
+                      [ ASCENSION PATH ]
+                    </Text>
+                    <Text style={styles.ascensionBannerTitle}>
+                      {progressionView.ascension.title}
+                    </Text>
+                    <Text style={styles.ascensionBannerSubtitle}>
+                      {progressionView.ascension.subtitle}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.progressionSummaryDetail,
+                        { color: accent, marginTop: 4 },
+                      ]}
+                    >
+                      REWARD: {progressionView.ascension.rewardLabel}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.panelTitle,
+                      { color: accent, marginTop: 10 },
+                    ]}
+                  >
+                    [ HALL OF FAME ]
+                  </Text>
+                  <View style={styles.progressionSummaryRow}>
+                    {progressionView.hallOfFame.map((item) => (
+                      <View
+                        key={item.title}
+                        style={styles.progressionSummaryCard}
+                      >
+                        <Text style={styles.progressionSummaryTitle}>
+                          {item.title}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.progressionSummaryValue,
+                            { color: accent },
+                          ]}
+                        >
+                          {item.value}
+                        </Text>
+                        <Text style={styles.progressionSummaryDetail}>
+                          {item.detail}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Text
+                    style={[
+                      styles.panelTitle,
+                      { color: accent, marginTop: 10 },
+                    ]}
+                  >
+                    [ TOWER OF LEVELS ]
+                  </Text>
+                  <View style={styles.towerRow}>
+                    {progressionView.towerFloors.map((floor) => (
+                      <View
+                        key={floor.floor}
+                        style={[
+                          styles.towerFloor,
+                          {
+                            borderColor: floor.active ? accent : "#2f4a3b",
+                            backgroundColor: floor.active
+                              ? "rgba(0, 255, 0, 0.12)"
+                              : floor.unlocked
+                                ? "rgba(255, 176, 0, 0.08)"
+                                : "rgba(0, 0, 0, 0.44)",
+                          },
+                        ]}
+                      >
+                        <Text style={styles.towerFloorLabel}>
+                          {floor.label}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.towerFloorValue,
+                            { color: floor.active ? accent : "#96b89c" },
+                          ]}
+                        >
+                          {floor.floor}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.progressBarShell}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          width: `${progressionView.nextLevelProgress.percent}%`,
+                          backgroundColor: accent,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.progressionSummaryDetail}>
+                    LEVEL PROGRESS: {progressionView.nextLevelProgress.percent}%
+                    TO THE NEXT FLOOR
+                  </Text>
+                  <Text
+                    style={[
+                      styles.panelTitle,
+                      { color: accent, marginTop: 10 },
+                    ]}
+                  >
+                    [ SKILLS ]
+                  </Text>
+                  <View style={styles.skillGrid}>
+                    {progressionView.skills.map((skill) => (
+                      <View key={skill.title} style={styles.skillCard}>
+                        <Text style={styles.skillTitle}>{skill.title}</Text>
+                        <Text style={[styles.skillValue, { color: accent }]}>
+                          {skill.value}
+                        </Text>
+                        <Text style={styles.progressionSummaryDetail}>
+                          {skill.description}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={{ display: activeTab === "SQUAD" ? "flex" : "none" }}
+              >
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ SQUAD NETWORK ]
+                  </Text>
+                  <Text style={styles.storeTitle}>
+                    Create a small crew, join a public squad, and keep the loop
+                    shared across languages.
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginBottom: 8 },
+                    ]}
+                  >
+                    BASIC CREWS: MAX 2 MEMBERS • ONE CREW ONLY • LEAVE FEE 12
+                    PP. PREMIUM CREWS: FLEXIBLE ROSTER • LEAVE FEE 8 PP.
+                  </Text>
+                  <View style={styles.inputRow}>
+                    <Text style={styles.storeTitle}>Squad name</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { borderColor: accent, marginTop: 6 },
+                      ]}
+                      value={squadName}
+                      onChangeText={setSquadName}
+                      placeholder="North Star Crew"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Text style={styles.storeTitle}>Mission focus</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { borderColor: accent, marginTop: 6 },
+                      ]}
+                      value={squadFocus}
+                      onChangeText={setSquadFocus}
+                      placeholder="Study and recovery"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Text style={styles.storeTitle}>Goal</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { borderColor: accent, marginTop: 6 },
+                      ]}
+                      value={squadGoal}
+                      onChangeText={setSquadGoal}
+                      placeholder="Complete 5 shared missions this week"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Text style={styles.storeTitle}>Visibility</Text>
+                    <View style={styles.squadVisibilityRow}>
+                      <Pressable
+                        style={[
+                          styles.visibilityChip,
+                          squadVisibility === "PUBLIC" &&
+                            styles.visibilityChipActive,
+                          { borderColor: accent },
+                        ]}
+                        onPress={() => setSquadVisibility("PUBLIC")}
+                      >
+                        <Text
+                          style={[
+                            styles.visibilityChipText,
+                            {
+                              color:
+                                squadVisibility === "PUBLIC"
+                                  ? "#000000"
+                                  : accent,
+                            },
+                          ]}
+                        >
+                          PUBLIC
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        style={[
+                          styles.visibilityChip,
+                          squadVisibility === "PRIVATE" &&
+                            styles.visibilityChipActive,
+                          { borderColor: accent },
+                        ]}
+                        onPress={() => setSquadVisibility("PRIVATE")}
+                      >
+                        <Text
+                          style={[
+                            styles.visibilityChipText,
+                            {
+                              color:
+                                squadVisibility === "PRIVATE"
+                                  ? "#000000"
+                                  : accent,
+                            },
+                          ]}
+                        >
+                          PRIVATE
+                        </Text>
+                      </Pressable>
+                    </View>
+                    <Text style={styles.storeTitle}>Description</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { borderColor: accent, marginTop: 6 },
+                      ]}
+                      value={squadDescription}
+                      onChangeText={setSquadDescription}
+                      placeholder="Shared discipline for a few operators"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Pressable
+                      style={[
+                        styles.buttonSecondary,
+                        { borderColor: accent, marginTop: 8 },
+                      ]}
+                      onPress={handleCreateSquad}
+                    >
+                      <Text style={[styles.buttonText, { color: accent }]}>
+                        CREATE SQUAD
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.inputRow}>
+                    <Text style={styles.storeTitle}>Join code</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { borderColor: accent, marginTop: 6 },
+                      ]}
+                      value={squadJoinCode}
+                      onChangeText={setSquadJoinCode}
+                      placeholder="AB12CD"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Text style={styles.storeTitle}>Member name</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        { borderColor: accent, marginTop: 6 },
+                      ]}
+                      value={squadMemberName}
+                      onChangeText={setSquadMemberName}
+                      placeholder="Nova"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Pressable
+                      style={[
+                        styles.buttonSecondary,
+                        { borderColor: accent, marginTop: 8 },
+                      ]}
+                      onPress={handleJoinSquad}
+                    >
+                      <Text style={[styles.buttonText, { color: accent }]}>
+                        JOIN SQUAD
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.squadList}>
+                    {squads.map((squad) => (
+                      <Pressable
+                        key={squad.id}
+                        onPress={() => setActiveSquadId(squad.id)}
+                        style={[
+                          styles.squadCard,
+                          activeSquadId === squad.id && styles.squadCardActive,
+                          { borderColor: accent },
+                        ]}
+                      >
+                        <Text style={styles.squadTitle}>{squad.name}</Text>
+                        <Text style={styles.storeStatus}>
+                          {squad.description}
+                        </Text>
+                        <Text style={[styles.storeStatus, { color: accent }]}>
+                          GOAL: {squad.goal}
+                        </Text>
+                        <Text style={[styles.storeStatus, { color: accent }]}>
+                          CODE: {squad.code} • {squad.members.length} MEMBERS •{" "}
+                          {squad.visibility}
+                        </Text>
+                        <View style={styles.progressBarShell}>
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              {
+                                width: `${Math.min(100, Math.round((squad.progress.current / squad.progress.target) * 100))}%`,
+                                backgroundColor: accent,
+                              },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.progressionSummaryDetail}>
+                          {squad.progress.current}/{squad.progress.target}{" "}
+                          {squad.progress.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {activeSquadId ? (
+                    <View style={styles.squadChatBox}>
+                      <Text style={styles.storeTitle}>ACTIVE SQUAD CHAT</Text>
+                      {captainPrivilegesActive ? (
+                        <View style={styles.inputRow}>
+                          <Text style={styles.storeTitle}>
+                            Captain task assignment
+                          </Text>
+                          <TextInput
+                            style={[
+                              styles.input,
+                              { borderColor: accent, marginTop: 6 },
+                            ]}
+                            value={captainTaskTarget}
+                            onChangeText={setCaptainTaskTarget}
+                            placeholder="Member name"
+                            placeholderTextColor="rgba(244,244,245,0.32)"
+                          />
+                          <TextInput
+                            style={[
+                              styles.input,
+                              { borderColor: accent, marginTop: 6 },
+                            ]}
+                            value={captainTaskText}
+                            onChangeText={setCaptainTaskText}
+                            placeholder="Assign a discipline task"
+                            placeholderTextColor="rgba(244,244,245,0.32)"
+                          />
+                          <Pressable
+                            style={[
+                              styles.buttonSecondary,
+                              { borderColor: accent, marginTop: 8 },
+                            ]}
+                            onPress={handleCaptainAssignTask}
+                          >
+                            <Text
+                              style={[styles.buttonText, { color: accent }]}
+                            >
+                              ASSIGN TASK
+                            </Text>
+                          </Pressable>
+                        </View>
+                      ) : null}
+                      <Pressable
+                        style={[
+                          styles.buttonSecondary,
+                          { borderColor: accent, marginTop: 8 },
+                        ]}
+                        onPress={handleLeaveSquadPrompt}
+                      >
+                        <Text style={[styles.buttonText, { color: accent }]}>
+                          LEAVE CREW ({effectivePlan === "PREMIUM" ? "8" : "12"}{" "}
+                          PP)
+                        </Text>
+                      </Pressable>
+                      {leaveSquadConfirmOpen ? (
+                        <Animated.View
+                          style={[
+                            styles.leaveConfirmCard,
+                            {
+                              borderColor: CRIMSON,
+                              transform: [{ scale: leaveSquadPulse }],
+                            },
+                          ]}
+                        >
+                          <View style={styles.leaveConfirmHeader}>
+                            <Text style={styles.leaveConfirmTitle}>
+                              CREW EXIT WARNING
+                            </Text>
+                            <Text style={styles.leaveConfirmCountdown}>
+                              EXIT COST //{" "}
+                              {effectivePlan === "PREMIUM" ? "8" : "12"} PP //{" "}
+                              {leaveSquadCountdown > 0
+                                ? `T-${leaveSquadCountdown}`
+                                : "READY"}
+                            </Text>
+                          </View>
+                          <Text style={styles.leaveConfirmBody}>
+                            Leaving will cost{" "}
+                            {effectivePlan === "PREMIUM" ? "8" : "12"} PP and
+                            remove you from{" "}
+                            {squads.find((squad) => squad.id === activeSquadId)
+                              ?.name ?? "the active crew"}
+                            .
+                          </Text>
+                          {state.pp < (effectivePlan === "PREMIUM" ? 8 : 12) ? (
+                            <Text style={styles.leaveConfirmWarning}>
+                              INSUFFICIENT PP. YOU NEED{" "}
+                              {effectivePlan === "PREMIUM" ? 8 : 12} PP TO EXIT.
+                            </Text>
+                          ) : null}
+                          <View style={styles.leaveConfirmActions}>
+                            <Pressable
+                              style={[
+                                styles.buttonSecondary,
+                                { borderColor: CRIMSON, marginRight: 8 },
+                              ]}
+                              onPress={confirmLeaveSquad}
+                              disabled={
+                                state.pp <
+                                (effectivePlan === "PREMIUM" ? 8 : 12)
+                              }
+                            >
+                              <Text
+                                style={[styles.buttonText, { color: CRIMSON }]}
+                              >
+                                CONFIRM EXIT
+                              </Text>
+                            </Pressable>
+                            <Pressable
+                              style={[
+                                styles.buttonSecondary,
+                                { borderColor: accent },
+                              ]}
+                              onPress={cancelLeaveSquad}
+                            >
+                              <Text
+                                style={[styles.buttonText, { color: accent }]}
+                              >
+                                CANCEL
+                              </Text>
+                            </Pressable>
+                          </View>
+                        </Animated.View>
+                      ) : null}
+                      {squads
+                        .find((squad) => squad.id === activeSquadId)
+                        ?.messages.map((message) => (
+                          <View key={message.id} style={styles.squadMessageRow}>
+                            <Text style={styles.squadMessageAuthor}>
+                              {message.author}
+                            </Text>
+                            <Text style={styles.squadMessageText}>
+                              {message.text}
+                            </Text>
+                            {message.translatedText ? (
+                              <Text style={styles.squadMessageTranslated}>
+                                {message.translatedText}
+                              </Text>
+                            ) : null}
+                          </View>
+                        ))}
+                      <TextInput
+                        style={[
+                          styles.input,
+                          { borderColor: accent, marginTop: 6 },
+                        ]}
+                        value={squadChatText}
+                        onChangeText={setSquadChatText}
+                        placeholder="Share a mission update"
+                        placeholderTextColor="rgba(244,244,245,0.32)"
+                      />
+                      <Pressable
+                        style={[
+                          styles.buttonSecondary,
+                          { borderColor: accent, marginTop: 8 },
+                        ]}
+                        onPress={handleSendSquadMessage}
+                      >
+                        <Text style={[styles.buttonText, { color: accent }]}>
+                          SEND UPDATE
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+
+              <View
+                style={{ display: activeTab === "SYSTEM" ? "flex" : "none" }}
+              >
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <View style={styles.languageRow}>
+                    <Text style={[styles.panelTitle, { color: accent }]}>
+                      [ {getLocalizedText("howToUse", language)} ]
+                    </Text>
+                    <View
+                      style={[styles.languagePicker, { borderColor: accent }]}
+                    >
+                      {getSupportedLanguages().map((option) => (
+                        <Pressable
+                          key={option.code}
+                          style={[
+                            styles.languageChip,
+                            language === option.code &&
+                              styles.languageChipActive,
+                            { borderColor: accent },
+                          ]}
+                          onPress={() => void changeLanguage(option.code)}
+                        >
+                          <Text
+                            style={[
+                              styles.languageChipText,
+                              {
+                                color:
+                                  language === option.code ? "#000000" : accent,
+                              },
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                  <View style={styles.guideCard}>
+                    {howToUseSteps.map((step) => (
+                      <View key={step.title} style={styles.guideRow}>
+                        <Text style={styles.guideTitle}>{step.title}</Text>
+                        <Text style={styles.guideBody}>{step.body}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ EU / ROMANIA COMPLIANCE ]
+                  </Text>
+                  <Text style={styles.storeTitle}>
+                    {buildComplianceNotice(complianceConsent)}
+                  </Text>
+                  <View style={styles.complianceRow}>
+                    <Pressable
+                      style={[styles.checkbox, styles.checkboxActive]}
+                      onPress={toggleComplianceScreen}
+                    >
+                      <Text style={styles.checkboxText}>
+                        {showComplianceScreen ? "▼" : "►"} OPEN LEGAL SCREEN
+                      </Text>
+                    </Pressable>
+                  </View>
+                  {showComplianceScreen ? (
+                    <View style={styles.complianceScreen}>
+                      <View style={styles.complianceCard}>
+                        <Text style={styles.complianceHeading}>
+                          PRIVACY POLICY
+                        </Text>
+                        {getPrivacyPolicyText().map((entry) => (
+                          <Text key={entry} style={styles.complianceBody}>
+                            {entry}
+                          </Text>
+                        ))}
+                      </View>
+                      <View style={styles.complianceCard}>
+                        <Text style={styles.complianceHeading}>
+                          TERMS OF USE
+                        </Text>
+                        {getTermsOfUseText().map((entry) => (
+                          <Text key={entry} style={styles.complianceBody}>
+                            {entry}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
+                  <View style={styles.complianceRow}>
+                    <Pressable
+                      style={[
+                        styles.checkbox,
+                        complianceConsent.privacyAccepted &&
+                          styles.checkboxActive,
+                      ]}
+                      onPress={() =>
+                        toggleComplianceConsent(
+                          "privacyAccepted",
+                          !complianceConsent.privacyAccepted,
+                        )
+                      }
+                    >
+                      <Text style={styles.checkboxText}>
+                        {complianceConsent.privacyAccepted ? "✓" : "○"} PRIVACY
+                        NOTICE ACCEPTED
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.complianceRow}>
+                    <Pressable
+                      style={[
+                        styles.checkbox,
+                        complianceConsent.termsAccepted &&
+                          styles.checkboxActive,
+                      ]}
+                      onPress={() =>
+                        toggleComplianceConsent(
+                          "termsAccepted",
+                          !complianceConsent.termsAccepted,
+                        )
+                      }
+                    >
+                      <Text style={styles.checkboxText}>
+                        {complianceConsent.termsAccepted ? "✓" : "○"} TERMS
+                        ACCEPTED
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.complianceRow}>
+                    <Pressable
+                      style={[
+                        styles.checkbox,
+                        complianceConsent.ageConfirmed && styles.checkboxActive,
+                      ]}
+                      onPress={() =>
+                        toggleComplianceConsent(
+                          "ageConfirmed",
+                          !complianceConsent.ageConfirmed,
+                        )
+                      }
+                    >
+                      <Text style={styles.checkboxText}>
+                        {complianceConsent.ageConfirmed ? "✓" : "○"} AGE 16+
+                        CONFIRMED
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text
+                    style={[
+                      styles.storeStatus,
+                      { color: accent, marginTop: 6 },
+                    ]}
+                  >
+                    This is a launch-ready EU-style compliance scaffold. A final
+                    privacy policy, terms, retention schedule, and data deletion
+                    path should be reviewed by local counsel before public
+                    release.
+                  </Text>
+                  <View style={styles.launchMetadataBox}>
+                    <Text
+                      style={[
+                        styles.panelTitle,
+                        { color: accent, marginBottom: 4 },
+                      ]}
+                    >
+                      [ LAUNCH CONTACTS ]
+                    </Text>
+                    <Text style={styles.storeTitle}>
+                      Support: {launchMetadata.supportEmail}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      Privacy: {launchMetadata.privacyUrl}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      Terms: {launchMetadata.termsUrl}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      Android: {launchMetadata.playStoreUrl}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      iOS: {launchMetadata.appStoreUrl}
+                    </Text>
+                  </View>
+                  <View style={styles.launchMetadataBox}>
+                    <Text
+                      style={[
+                        styles.panelTitle,
+                        { color: accent, marginBottom: 4 },
+                      ]}
+                    >
+                      [ STORE COPY READY ]
+                    </Text>
+                    <Text style={styles.storeTitle}>
+                      Title options:{" "}
+                      {launchCopyPack.appTitleOptions.join(" • ")}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      Short: {launchCopyPack.shortDescription}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      Captions:{" "}
+                      {launchCopyPack.screenshotCaptions
+                        .slice(0, 3)
+                        .join(" / ")}
+                    </Text>
+                    <Text style={styles.storeStatus}>
+                      Hooks:{" "}
+                      {launchCopyPack.marketingHooks.slice(0, 4).join(" / ")}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={{ display: activeTab === "PROFILE" ? "flex" : "none" }}
+              >
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ PROGRESSION REWARDS ]
+                  </Text>
+                  <Text
+                    style={[
+                      styles.storeTitle,
+                      { color: accent, marginBottom: 8 },
+                    ]}
+                  >
+                    REWARDS UNLOCKED: {narrativeProgress.unlockedCount}/
+                    {narrativeProgress.totalCount}
+                  </Text>
+                  <View style={styles.rewardGrid}>
+                    {narrativeProgress.episodes.slice(0, 6).map((episode) => {
+                      const rewardLabel =
+                        episode.requiredLevel <= 2
+                          ? "OPERATOR TITLE"
+                          : episode.requiredLevel <= 4
+                            ? "TERMINAL THEME"
+                            : episode.requiredLevel <= 6
+                              ? "RECOVERY BOOST"
+                              : episode.requiredLevel <= 8
+                                ? "ADVANCED PROTOCOL"
+                                : episode.requiredLevel <= 10
+                                  ? "PRESTIGE BADGE"
+                                  : "HIDDEN TRANSMISSION";
+
+                      return (
+                        <View
+                          key={episode.title}
+                          style={[
+                            styles.rewardCard,
+                            episode.unlocked
+                              ? styles.rewardCardUnlocked
+                              : styles.rewardCardLocked,
+                          ]}
+                        >
+                          <Text style={styles.rewardCardTitle}>
+                            {episode.title}
+                          </Text>
+                          <Text
+                            style={[styles.rewardCardLabel, { color: accent }]}
+                          >
+                            {rewardLabel}
+                          </Text>
+                          <Text style={styles.rewardCardStatus}>
+                            {episode.unlocked
+                              ? `UNLOCKED // LV ${episode.requiredLevel}`
+                              : `LOCKED // LV ${episode.requiredLevel}`}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={{ display: activeTab === "SYSTEM" ? "flex" : "none" }}
+              >
+                <View style={[styles.panel, { borderColor: accent }]}>
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ {getLocalizedText("commandAccess", language)} ]
+                  </Text>
+                  <Text style={[styles.storeTitle, { color: accent }]}>
+                    Core progression remains free. Premium access is limited to
+                    terminal conveniences, recovery tools, and voice-assisted
+                    tactical support.
+                  </Text>
+                </View>
+              </View>
             </View>
           </ScrollView>
           {isWeb && (
@@ -3176,10 +5352,169 @@ export default function App() {
               style={styles.webRightCol}
               contentContainerStyle={styles.webColContent}
             >
-              <View style={[styles.bentoWindow, { borderColor: accent }]}>...</n              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>
+                  SQUAD COMMAND CENTER
+                </Text>
+                {squads.map((squad) => (
+                  <View
+                    key={squad.id}
+                    style={[
+                      styles.webSquadEntry,
+                      { borderColor: `${accent}44` },
+                    ]}
+                  >
+                    <View style={styles.webSquadEntryHeader}>
+                      <Text
+                        style={[styles.webSquadEntryName, { color: accent }]}
+                      >
+                        {squad.name}
+                      </Text>
+                      <View
+                        style={[
+                          styles.webSquadStatusDot,
+                          { backgroundColor: "#00CC66" },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.bentoDetailMini}>
+                      {squad.members.length} MEMBERS • {squad.visibility}
+                    </Text>
+                    <View style={styles.progressBarShell}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${Math.min(100, Math.round((squad.progress.current / squad.progress.target) * 100))}%`,
+                            backgroundColor: accent,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>
+                  SQUAD ADHERENCE METRICS
+                </Text>
+                {squads
+                  .flatMap((squad) => squad.members)
+                  .slice(0, 4)
+                  .map((member) => (
+                    <View key={member.id} style={styles.webMemberRow}>
+                      <View
+                        style={[
+                          styles.webMemberAvatar,
+                          { borderColor: accent },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.webMemberInitial, { color: accent }]}
+                        >
+                          {member.name.charAt(0)}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.webMemberName, { color: accent }]}>
+                          {member.name}
+                        </Text>
+                        <Text style={styles.bentoDetailMini}>
+                          LIVE: ACTIVE • ROLE: {member.role}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.webMemberStatusDot,
+                          { backgroundColor: "#00CC66" },
+                        ]}
+                      />
+                    </View>
+                  ))}
+              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>NETWORK MAP WINDOW</Text>
+                <NetworkMapWidget
+                  accent={accent}
+                  nodeCount={Math.min(
+                    5,
+                    squads.reduce((sum, sq) => sum + sq.members.length, 0) + 1,
+                  )}
+                />
+                <Text style={[styles.bentoDetailMini, { marginTop: 8 }]}>
+                  STRUCTURAL INTEGRITY:{" "}
+                  {squads.length > 0 ? "STABLE" : "ISOLATED"}
+                </Text>
+              </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}>
+                <Text style={styles.bentoWindowTitle}>
+                  PACT VERIFICATION CENTER
+                </Text>
+                <Text style={[styles.bentoDetailMini, { color: accent }]}>
+                  ACTIVE PACT: {state.missionTitle}
+                </Text>
+                <Text style={styles.bentoDetailMini}>
+                  STAKE: {contractStake} PP • DURATION: {contractDuration} MIN
+                </Text>
+                <Text
+                  style={[
+                    styles.bentoDetailMini,
+                    {
+                      color: state.redState ? PEAK_CRIMSON : accent,
+                      marginTop: 6,
+                    },
+                  ]}
+                >
+                  {"STATUS: " +
+                    (state.redState
+                      ? "REDSTATE / BREACH"
+                      : state.offline
+                        ? "OFFLINE MODE"
+                        : "OPERATIONAL")}
+                </Text>
+              </View>
             </ScrollView>
           )}
         </View>
+        {tutorialStep !== null && (
+          <TutorialOverlay
+            step={tutorialStep}
+            accent={accent}
+            onNext={handleTutorialNext}
+            onPrev={handleTutorialPrev}
+            onSkip={handleTutorialSkip}
+          />
+        )}
+        {isWeb ? (
+          <View style={[styles.webCLIBar, { borderColor: accent }]}>
+            <Text style={[styles.webCLIPrompt, { color: accent }]}>{">"}</Text>
+            <TextInput
+              style={[styles.webCLIInput, { color: accent }]}
+              value={cliInput}
+              onChangeText={setCliInput}
+              onSubmitEditing={handleCLICommand}
+              placeholder="AWAITING COMMAND OR QUERY..."
+              placeholderTextColor={`${accent}55`}
+              returnKeyType="send"
+            />
+            <View style={[styles.webCLICursor, { backgroundColor: accent }]} />
+          </View>
+        ) : (
+          <View style={[styles.mobileCLIBar, { borderColor: accent }]}>
+            <Text style={[styles.mobileCLIPrompt, { color: accent }]}>
+              {">"}
+            </Text>
+            <TextInput
+              style={[styles.mobileCLIInput, { color: accent }]}
+              value={cliInput}
+              onChangeText={setCliInput}
+              onSubmitEditing={handleCLICommand}
+              placeholder="AWAITING COMMAND OR QUERY..."
+              placeholderTextColor={`${accent}55`}
+              returnKeyType="send"
+            />
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -3188,11 +5523,11 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#030711",
   },
   keyboardShell: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#030711",
   },
   authBootShell: {
     flex: 1,
@@ -3201,29 +5536,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.74)",
+    backgroundColor: "rgba(2, 7, 16, 0.90)",
     paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: "rgba(37, 249, 213, 0.32)",
   },
   authBootLabel: {
-    color: MATRIX_GREEN,
+    color: "rgba(37, 249, 213, 0.95)",
     fontFamily: "monospace",
     fontSize: 12,
     letterSpacing: 3,
   },
   authBootTitle: {
-    color: "#f5fff8",
+    color: "#F7FCFF",
     fontFamily: "monospace",
     fontSize: 24,
     fontWeight: "700",
     marginTop: 10,
+    textShadowColor: "rgba(37, 249, 213, 0.45)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 14,
   },
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000000",
+    backgroundColor: "#030711",
   },
   terminalBackdropVeil: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 4, 3, 0.82)",
+    backgroundColor: "rgba(2, 7, 16, 0.76)",
   },
   screenJitter: {
     transform: [{ translateX: 0.6 }, { translateY: 0.4 }],
@@ -3232,15 +5572,27 @@ const styles = StyleSheet.create({
   holoLayer: {
     ...StyleSheet.absoluteFillObject,
     borderWidth: 1,
-    borderColor: MATRIX_GREEN,
+    borderColor: "rgba(37, 249, 213, 0.30)",
+    backgroundColor: "rgba(37, 249, 213, 0.04)",
     pointerEvents: "none",
+  },
+  fxGlow: {
+    ...StyleSheet.absoluteFillObject,
+    top: 22,
+    left: 22,
+    right: 22,
+    height: 140,
+    borderRadius: 36,
+    backgroundColor: "rgba(37, 249, 213, 0.10)",
+    pointerEvents: "none",
+    zIndex: 0,
   },
   scanlineOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: MATRIX_GREEN,
-    opacity: 0.08,
+    borderColor: "rgba(79, 163, 255, 0.16)",
+    opacity: 0.16,
     pointerEvents: "none",
   },
   scanlineBar: {
@@ -3248,6 +5600,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
+    backgroundColor: "rgba(37, 249, 213, 0.16)",
   },
   shell: {
     flex: 1,
@@ -3262,14 +5615,1768 @@ const styles = StyleSheet.create({
   appShell: {
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,42,42,0.16)",
-    backgroundColor: "rgba(6,2,2,0.95)",
+    borderColor: "rgba(37, 249, 213, 0.24)",
+    backgroundColor: "rgba(5, 10, 18, 0.96)",
     padding: 14,
-    shadowColor: "#FF2A2A",
-    shadowOpacity: 0.1,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
+    shadowColor: "#25F9D5",
+    shadowOpacity: 0.34,
+    shadowRadius: 36,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
   },
-  // ... rest of styles truncated for brevity in this snapshot
+  brandHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  headerLogo: {
+    width: 46,
+    height: 46,
+  },
+  headerCopy: {
+    flexShrink: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(0, 255, 0, 0.2)",
+    backgroundColor: "rgba(2, 10, 7, 0.94)",
+  },
+  headerContent: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  headerFlash: {
+    backgroundColor: "rgba(0, 24, 8, 0.98)",
+    borderColor: MATRIX_GREEN,
+  },
+  levelBanner: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  recoveryBanner: {
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    alignItems: "center",
+    backgroundColor: "rgba(127, 231, 201, 0.08)",
+  },
+  recoveryBannerText: {
+    fontFamily: "monospace",
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  levelBannerText: {
+    color: MATRIX_GREEN,
+    fontFamily: "monospace",
+    fontSize: 12,
+    letterSpacing: 2,
+  },
+  label: {
+    color: MATRIX_GREEN,
+    fontFamily: "monospace",
+    fontSize: 12,
+    letterSpacing: 2,
+  },
+  title: {
+    color: "#E8FFFF",
+    fontFamily: "monospace",
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  operatorText: {
+    color: "#A6FEFF",
+    fontFamily: "monospace",
+    fontSize: 11,
+    letterSpacing: 2,
+    marginTop: 6,
+  },
+  badge: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  badgeText: {
+    color: MATRIX_GREEN,
+    fontFamily: "monospace",
+    fontSize: 16,
+  },
+  heroCard: {
+    borderColor: "rgba(37, 249, 213, 0.34)",
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 12,
+    borderRadius: 20,
+    backgroundColor: "rgba(7, 12, 24, 0.98)",
+    shadowColor: "#4FA3FF",
+    shadowOpacity: 0.24,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
+  },
+  heroCardCore: {
+    borderRadius: 20,
+  },
+  heroCardTerminal: {
+    borderRadius: 4,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  heroCardMecha: {
+    borderRadius: 24,
+    shadowOpacity: 0.24,
+  },
+  heroCardLitrpg: {
+    borderRadius: 10,
+    borderWidth: 2,
+  },
+  heroCardApex: {
+    borderRadius: 2,
+    shadowOpacity: 0.08,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  heroPill: {
+    borderColor: "rgba(76, 255, 243, 0.35)",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "rgba(76, 255, 243, 0.12)",
+  },
+  heroPillCore: {
+    borderRadius: 8,
+  },
+  heroPillTerminal: {
+    borderRadius: 2,
+  },
+  heroPillMecha: {
+    borderRadius: 14,
+    paddingHorizontal: 10,
+  },
+  heroPillLitrpg: {
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  heroPillApex: {
+    borderRadius: 0,
+    paddingHorizontal: 9,
+  },
+  heroPillText: {
+    color: MATRIX_GREEN,
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 1,
+  },
+  heroTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 19,
+    marginBottom: 6,
+  },
+  heroEmphasis: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 11,
+    marginBottom: 8,
+  },
+  heroMissionRow: {
+    borderColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    padding: 10,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  heroMissionRowCore: {
+    borderRadius: 10,
+  },
+  heroMissionRowTerminal: {
+    borderRadius: 2,
+  },
+  heroMissionRowMecha: {
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  heroMissionRowLitrpg: {
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  heroMissionRowApex: {
+    borderRadius: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  heroMissionLabel: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 3,
+  },
+  heroMissionText: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 13,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    gap: 8,
+  },
+  statsRowCore: {
+    gap: 8,
+  },
+  statsRowTerminal: {
+    gap: 6,
+  },
+  statsRowMecha: {
+    gap: 10,
+  },
+  statsRowLitrpg: {
+    gap: 7,
+  },
+  statsRowApex: {
+    gap: 12,
+  },
+  statBox: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    padding: 12,
+    flex: 1,
+    borderRadius: 16,
+    backgroundColor: "rgba(10,4,4,0.90)",
+  },
+  statBoxCore: {
+    borderRadius: 16,
+  },
+  statBoxTerminal: {
+    borderRadius: 2,
+  },
+  statBoxMecha: {
+    borderRadius: 18,
+    borderWidth: 2,
+  },
+  statBoxLitrpg: {
+    borderRadius: 8,
+    borderWidth: 2,
+  },
+  statBoxApex: {
+    borderRadius: 0,
+    paddingVertical: 12,
+  },
+  statLabel: {
+    color: "#909098",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 1.2,
+    marginBottom: 2,
+    textTransform: "uppercase",
+  },
+  statValue: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 22,
+    fontWeight: "700",
+    marginTop: 2,
+    lineHeight: 26,
+  },
+  statSubLabel: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 0.5,
+    marginTop: 3,
+  },
+  onboardingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    padding: 24,
+  },
+  onboardingCard: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    padding: 18,
+    borderRadius: 22,
+    backgroundColor: "rgba(3, 10, 7, 0.96)",
+    maxWidth: 420,
+    width: "100%",
+    shadowColor: "#00ff00",
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  onboardingLabel: {
+    color: MATRIX_GREEN,
+    fontFamily: "monospace",
+    fontSize: 12,
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  onboardingTitle: {
+    color: "#f5fff8",
+    fontFamily: "monospace",
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  onboardingBody: {
+    color: MATRIX_GREEN,
+    fontFamily: "monospace",
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  onboardingSteps: {
+    marginBottom: 12,
+    gap: 4,
+  },
+  onboardingStep: {
+    color: "#f5fff8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  onboardingActionRow: {
+    borderWidth: 1,
+    marginBottom: 14,
+    padding: 10,
+    backgroundColor: "rgba(0, 255, 0, 0.05)",
+  },
+  onboardingActionLabel: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  onboardingActionValue: {
+    color: "#f5fff8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  onboardingButton: {
+    backgroundColor: MATRIX_GREEN,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 12,
+  },
+  onboardingButtonText: {
+    color: "#000000",
+    fontFamily: "monospace",
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  panel: {
+    borderColor: "rgba(79, 163, 255, 0.22)",
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 18,
+    backgroundColor: "rgba(6, 10, 18, 0.96)",
+    shadowColor: "#25F9D5",
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  guideCard: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    padding: 8,
+    backgroundColor: "rgba(0, 255, 0, 0.05)",
+  },
+  squadList: {
+    marginTop: 10,
+    gap: 8,
+  },
+  squadCard: {
+    borderWidth: 1,
+    borderColor: MATRIX_GREEN,
+    padding: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.32)",
+  },
+  squadCardActive: {
+    backgroundColor: "rgba(0, 255, 0, 0.1)",
+  },
+  squadTitle: {
+    color: "#f5fff8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  squadVisibilityRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  visibilityChip: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.36)",
+  },
+  visibilityChipActive: {
+    backgroundColor: MATRIX_GREEN,
+  },
+  visibilityChipText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  squadChatBox: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: MATRIX_GREEN,
+    padding: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.24)",
+  },
+  leaveConfirmCard: {
+    marginTop: 10,
+    borderWidth: 1,
+    padding: 10,
+    backgroundColor: "rgba(24, 6, 6, 0.92)",
+    shadowColor: CRIMSON,
+    shadowOpacity: 0.42,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  leaveConfirmHeader: {
+    marginBottom: 6,
+  },
+  leaveConfirmTitle: {
+    color: "#ffffff",
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  leaveConfirmCountdown: {
+    color: CRIMSON,
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginTop: 4,
+  },
+  leaveConfirmBody: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 19,
+  },
+  leaveConfirmWarning: {
+    color: CRIMSON,
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+    marginTop: 8,
+  },
+  leaveConfirmActions: {
+    flexDirection: "row",
+    marginTop: 10,
+    alignItems: "center",
+  },
+  squadMessageRow: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.1)",
+  },
+  squadMessageAuthor: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  squadMessageText: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  squadMessageTranslated: {
+    color: "#7FE7C9",
+    fontFamily: "monospace",
+    fontSize: 10,
+    marginTop: 2,
+  },
+  guideRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.08)",
+  },
+  guideTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  guideBody: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 19,
+  },
+  ascensionBanner: {
+    borderColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,42,42,0.05)",
+  },
+  ascensionBannerFlash: {
+    borderColor: AMBER,
+    backgroundColor: "rgba(255, 176, 0, 0.12)",
+  },
+  ascensionBannerTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  ascensionBannerSubtitle: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  progressionSummaryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 6,
+  },
+  progressionSummaryCard: {
+    borderColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    padding: 10,
+    flexBasis: "31%",
+    minWidth: 100,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  progressionSummaryTitle: {
+    color: "#909098",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  progressionSummaryValue: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  progressionSummaryDetail: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  towerRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+  },
+  towerFloor: {
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    minWidth: 44,
+    alignItems: "center",
+  },
+  towerFloorLabel: {
+    color: "#dceee0",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 1,
+  },
+  towerFloorValue: {
+    fontFamily: "monospace",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  progressBarShell: {
+    height: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    marginTop: 10,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: 8,
+  },
+  challengeCard: {
+    borderWidth: 1,
+    padding: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.32)",
+  },
+  challengeTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  challengeBody: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 19,
+  },
+  challengeReward: {
+    color: AMBER,
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+    marginTop: 8,
+  },
+  skillGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 6,
+  },
+  skillCard: {
+    borderColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    padding: 10,
+    flexBasis: "48%",
+    minWidth: 120,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  skillTitle: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  skillValue: {
+    fontFamily: "monospace",
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  complianceScreen: {
+    marginTop: 8,
+  },
+  complianceCard: {
+    marginTop: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.34)",
+  },
+  complianceHeading: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginBottom: 6,
+    letterSpacing: 1,
+  },
+  complianceBody: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 11,
+    lineHeight: 18,
+  },
+  complianceRow: {
+    marginTop: 8,
+  },
+  checkbox: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  checkboxActive: {
+    borderColor: PEAK_CRIMSON,
+    backgroundColor: "rgba(255,42,42,0.10)",
+  },
+  checkboxText: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  statusPanel: {
+    backgroundColor: "rgba(0, 8, 6, 0.8)",
+  },
+  panelTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 10,
+    letterSpacing: 0.8,
+  },
+  languageRow: {
+    marginBottom: 8,
+  },
+  languagePicker: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 4,
+  },
+  languageChip: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+  },
+  languageChipActive: {
+    backgroundColor: MATRIX_GREEN,
+  },
+  languageChipText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  logBox: {
+    maxHeight: 220,
+  },
+  logContent: {
+    gap: 4,
+  },
+  logLine: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  inputRow: {
+    marginBottom: 8,
+  },
+  inputHelperRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 6,
+    gap: 8,
+  },
+  inputHint: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    flex: 1,
+    lineHeight: 16,
+  },
+  inputHelperButton: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  inputHelperButtonText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  input: {
+    borderColor: "rgba(79, 163, 255, 0.38)",
+    borderWidth: 1,
+    minHeight: 70,
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    padding: 12,
+    fontSize: 13,
+    lineHeight: 20,
+    borderRadius: 12,
+    backgroundColor: "rgba(3, 8, 18, 0.90)",
+  },
+  dailyLoopCard: {
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    backgroundColor: "rgba(10,4,4,0.92)",
+  },
+  recoveryLoopCard: {
+    borderColor: "#7FE7C9",
+    backgroundColor: "rgba(127, 231, 201, 0.08)",
+  },
+  dailyLoopHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  dailyLoopTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+  },
+  dailyLoopNextBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  dailyLoopNextBadgeText: {
+    fontFamily: "monospace",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+  dailyLoopBody: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 19,
+    marginBottom: 8,
+  },
+  dailyLoopNextAction: {
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 12,
+    letterSpacing: 0.3,
+  },
+  dailyLoopSteps: {
+    gap: 8,
+  },
+  dailyLoopStep: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  dailyLoopStepNum: {
+    fontFamily: "monospace",
+    fontSize: 16,
+    fontWeight: "700",
+    width: 22,
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  dailyLoopStepContent: {
+    flex: 1,
+  },
+  dailyLoopStepTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  dailyLoopStepBody: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 11,
+    lineHeight: 17,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+  },
+  buttonPrimary: {
+    flex: 1,
+    backgroundColor: "rgba(37, 249, 213, 0.16)",
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(37, 249, 213, 0.48)",
+    shadowColor: "#4FA3FF",
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+  },
+  buttonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonSecondary: {
+    flex: 1,
+    borderColor: "rgba(79, 163, 255, 0.36)",
+    borderWidth: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 14,
+    backgroundColor: "rgba(8, 13, 22, 0.84)",
+  },
+  buttonText: {
+    color: "#F7FCFF",
+    fontFamily: "monospace",
+    fontWeight: "700",
+  },
+  statusTagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    gap: 6,
+  },
+  statusTag: {
+    borderColor: CRIMSON,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "rgba(255, 0, 51, 0.12)",
+  },
+  statusTagText: {
+    color: CRIMSON,
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  manualEntry: {
+    marginBottom: 8,
+  },
+  insightBox: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    padding: 8,
+    marginTop: 8,
+    backgroundColor: "rgba(255, 176, 0, 0.08)",
+  },
+  guidanceBox: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    padding: 8,
+    marginTop: 8,
+    backgroundColor: "rgba(0, 255, 0, 0.05)",
+  },
+  launchMetadataBox: {
+    borderColor: MATRIX_GREEN,
+    borderWidth: 1,
+    padding: 10,
+    marginTop: 8,
+    backgroundColor: "rgba(8, 20, 14, 0.72)",
+  },
+  launchShowcasePanel: {
+    padding: 0,
+    overflow: "hidden",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  launchShowcaseArt: {
+    minHeight: 220,
+    justifyContent: "flex-end",
+  },
+  launchShowcaseArtImage: {
+    opacity: 0.82,
+  },
+  launchShowcaseVeil: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.54)",
+  },
+  launchShowcaseContent: {
+    position: "relative",
+    padding: 14,
+  },
+  launchShowcaseHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  launchShowcaseLogo: {
+    width: 86,
+    height: 86,
+  },
+  launchShowcaseHeaderCopy: {
+    flex: 1,
+  },
+  launchShowcaseSubtitle: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 11,
+    lineHeight: 18,
+  },
+  launchShowcaseCaptionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  launchShowcaseMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  launchShowcaseMetaChip: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    backgroundColor: "rgba(0, 0, 0, 0.58)",
+  },
+  launchShowcaseMetaText: {
+    fontFamily: "monospace",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1.3,
+  },
+  launchShowcaseCaptionChip: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.42)",
+    maxWidth: "100%",
+  },
+  launchShowcaseCaptionText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.6,
+  },
+  launchShowcaseBody: {
+    color: "#f5fff8",
+    fontFamily: "monospace",
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 12,
+  },
+  launchMediaRail: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  launchMediaCard: {
+    flex: 1,
+    minHeight: 120,
+    borderWidth: 1,
+    overflow: "hidden",
+    backgroundColor: "rgba(0, 0, 0, 0.56)",
+  },
+  launchMediaArt: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-start",
+    padding: 10,
+  },
+  launchMediaArtImage: {
+    opacity: 0.88,
+  },
+  launchMediaIconImage: {
+    opacity: 0.95,
+  },
+  launchMediaVeil: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.38)",
+  },
+  launchMediaLabel: {
+    position: "relative",
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "rgba(0, 255, 0, 0.4)",
+    backgroundColor: "rgba(0, 0, 0, 0.52)",
+  },
+  storeItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  rewardGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  rewardCard: {
+    width: "48%",
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 8,
+    minHeight: 90,
+  },
+  rewardCardUnlocked: {
+    borderColor: "rgba(255,42,42,0.4)",
+    backgroundColor: "rgba(255,42,42,0.06)",
+  },
+  rewardCardLocked: {
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  rewardCardTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 11,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  rewardCardLabel: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  rewardCardStatus: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    lineHeight: 15,
+  },
+  storeTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 2,
+  },
+  storeStatus: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  templateCard: {
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 8,
+    borderRadius: 14,
+  },
+  templateCardCore: {
+    borderRadius: 14,
+  },
+  templateCardTerminal: {
+    borderRadius: 4,
+  },
+  templateCardMecha: {
+    borderRadius: 20,
+  },
+  templateCardLitrpg: {
+    borderRadius: 10,
+    borderWidth: 2,
+  },
+  templateCardApex: {
+    borderRadius: 2,
+    paddingVertical: 12,
+  },
+  templateHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  templateSwatch: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  templateSwatchCore: {
+    borderRadius: 10,
+  },
+  templateSwatchTerminal: {
+    borderRadius: 2,
+  },
+  templateSwatchMecha: {
+    borderRadius: 18,
+  },
+  templateSwatchLitrpg: {
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  templateSwatchApex: {
+    borderRadius: 0,
+  },
+  templateMeta: {
+    flex: 1,
+  },
+  templateTitle: {
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  templateBody: {
+    color: "#cfeeda",
+    fontFamily: "monospace",
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  templateSignatureRow: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  templateSignatureLabel: {
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  templateSignatureTrack: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  templateSignatureNode: {
+    height: 6,
+    borderWidth: 1,
+    borderRadius: 2,
+  },
+  templateMetaRow: {
+    marginTop: 8,
+    marginBottom: 6,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+  templateTierPill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 0.8,
+    overflow: "hidden",
+  },
+  templateStateLabel: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+  },
+  templateValueCue: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    lineHeight: 15,
+    marginBottom: 2,
+  },
+  templateFooterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  templatePrice: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  templateAction: {
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+  },
+  templateActionCore: {
+    borderRadius: 10,
+  },
+  templateActionTerminal: {
+    borderRadius: 2,
+  },
+  templateActionMecha: {
+    borderRadius: 14,
+    paddingHorizontal: 12,
+  },
+  templateActionLitrpg: {
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  templateActionApex: {
+    borderRadius: 1,
+  },
+  templateActionText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+    fontWeight: "700",
+  },
+
+  // ── Crimson Ledger: SYS_STATUS strip ──────────────────────────────────────
+  sysStatusStrip: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "rgba(0,0,0,0.88)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,42,42,0.28)",
+    marginBottom: 6,
+  },
+  sysStatusText: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+
+  // ── Bento header ──────────────────────────────────────────────────────────
+  headerBentoRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  operatorLedgerPane: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: "rgba(13,0,0,0.92)",
+  },
+  severanceTimerPane: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: "rgba(13,0,0,0.92)",
+    alignItems: "flex-end",
+  },
+  bentoWindowTitle: {
+    color: "#909098",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  bentoOperatorId: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  bentoLvlBadge: {
+    fontFamily: "monospace",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  bentoPPHero: {
+    fontFamily: "monospace",
+    fontSize: 26,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  bentoProtocolLine: {
+    color: "#888892",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.4,
+  },
+  bentoCountdown: {
+    fontFamily: "monospace",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  bentoTimerLabel: {
+    color: "#909098",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  bentoStreakText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  bentoXpText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+  },
+
+  // ── Active Pact Ring section ───────────────────────────────────────────────
+  pactRingSection: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    backgroundColor: "rgba(13,0,0,0.88)",
+    alignItems: "center",
+  },
+  pactRingSectionTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 2,
+    opacity: 0.55,
+    marginBottom: 10,
+    textTransform: "uppercase",
+  },
+  pactRingDualView: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 16,
+    marginBottom: 10,
+  },
+  pactRingHalf: {
+    alignItems: "center",
+  },
+  pactRingLabel: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginTop: 6,
+  },
+  pactRingSubLabel: {
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 0.5,
+    opacity: 0.75,
+    marginTop: 2,
+  },
+  pactRingMissionText: {
+    fontFamily: "monospace",
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  pactRingVerifyHint: {
+    fontFamily: "monospace",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    borderWidth: 1,
+    borderColor: "rgba(244,244,245,0.3)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+
+  // ── Mobile CLI bar ─────────────────────────────────────────────────────────
+  mobileCLIBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderTopWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "rgba(0,0,0,0.96)",
+    gap: 8,
+  },
+  mobileCLIPrompt: {
+    fontFamily: "monospace",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  mobileCLIInput: {
+    flex: 1,
+    fontFamily: "monospace",
+    fontSize: 12,
+    letterSpacing: 0.5,
+    paddingVertical: 0,
+  },
+
+  // ── Web layout ─────────────────────────────────────────────────────────────
+  mobileColumnWrapper: {
+    flex: 1,
+  },
+  webColumnsRow: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  webGlobalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+  },
+  webGlobalTitle: {
+    fontFamily: "monospace",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  webGlobalCenter: {
+    flexDirection: "row",
+    gap: 20,
+    alignItems: "center",
+  },
+  webGlobalStatus: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  webGlobalTime: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  webGlobalAuth: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1,
+    opacity: 0.7,
+  },
+  webLeftCol: {
+    width: 280,
+    borderRightWidth: 1,
+    borderRightColor: "rgba(255,42,42,0.2)",
+  },
+  webCenterCol: {
+    flex: 1,
+  },
+  webRightCol: {
+    width: 280,
+    borderLeftWidth: 1,
+    borderLeftColor: "rgba(255,42,42,0.2)",
+  },
+  webColContent: {
+    padding: 12,
+    gap: 10,
+  },
+  bentoWindow: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "rgba(13,0,0,0.88)",
+    marginBottom: 8,
+  },
+  bentoDetailMini: {
+    color: "#F4F4F580",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 0.6,
+    marginTop: 2,
+  },
+  webLedgerPP: {
+    fontFamily: "monospace",
+    fontSize: 32,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  webLedgerPPLabel: {
+    color: "#F4F4F560",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  webLedgerSpacer: {
+    height: 8,
+  },
+  webLedgerDetail: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  webSearchHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,42,42,0.2)",
+    paddingBottom: 4,
+    marginBottom: 4,
+  },
+  webSearchCol: {
+    flex: 1,
+    color: "#F4F4F555",
+    fontFamily: "monospace",
+    fontSize: 8,
+    letterSpacing: 0.8,
+  },
+  webSearchRow: {
+    flexDirection: "row",
+    paddingVertical: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,42,42,0.08)",
+  },
+  webSearchCell: {
+    flex: 1,
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 9,
+  },
+  webGalleryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 6,
+    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  webGalleryColor: {
+    width: 24,
+    height: 24,
+    borderRadius: 3,
+    flexShrink: 0,
+  },
+  webGalleryName: {
+    fontFamily: "monospace",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  webGalleryPrice: {
+    color: "#F4F4F555",
+    fontFamily: "monospace",
+    fontSize: 8,
+    letterSpacing: 0.5,
+  },
+  webGalleryState: {
+    fontFamily: "monospace",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1,
+    flexShrink: 0,
+  },
+  webGalleryUpgradeBtn: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingVertical: 8,
+    alignItems: "center",
+    marginTop: 8,
+    backgroundColor: "rgba(255,42,42,0.08)",
+  },
+  webGalleryUpgradeText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  webSquadEntry: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 8,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  webSquadEntryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  webSquadEntryName: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  webSquadStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  webMemberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,42,42,0.1)",
+    gap: 8,
+  },
+  webMemberAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    backgroundColor: "rgba(255,42,42,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  webMemberInitial: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  webMemberName: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  webMemberStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    flexShrink: 0,
+  },
+
+  // ── CLI bars ───────────────────────────────────────────────────────────────
+  webCLIBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderTopWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    backgroundColor: "rgba(0,0,0,0.98)",
+    gap: 10,
+  },
+  webCLIPrompt: {
+    fontFamily: "monospace",
+    fontSize: 14,
+    fontWeight: "700",
+    flexShrink: 0,
+  },
+  webCLIInput: {
+    flex: 1,
+    fontFamily: "monospace",
+    fontSize: 13,
+    letterSpacing: 0.5,
+    paddingVertical: 0,
+  },
+  webCLICursor: {
+    width: 9,
+    height: 16,
+    opacity: 0.8,
+    flexShrink: 0,
+  },
 });

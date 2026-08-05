@@ -1,6 +1,9 @@
 import React from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { Image, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { type AccessFormState, type AccessMode } from "../services/accessGate";
+
+const accessLogo = require("../../assets/logo.peakpact.png");
+const accessBackdrop = require("../../assets/elite-splash.jpg");
 
 export default function AccessGate({
   mode,
@@ -22,71 +25,129 @@ export default function AccessGate({
   onSubmit: () => void;
 }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>PEAKPACT / ACCESS GATE</Text>
-      <View style={styles.modeRow}>
-        <Pressable
-          style={[styles.modeButton, mode === "SIGN_IN" && styles.modeButtonActive]}
-          onPress={() => onModeChange("SIGN_IN")}
-        >
-          <Text style={styles.modeText}>SIGN IN</Text>
+    <ImageBackground source={accessBackdrop} style={styles.container} resizeMode="cover">
+      <View style={styles.overlay} />
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>OPERATOR ACCESS</Text>
+          </View>
+          <Image source={accessLogo} style={styles.logo} resizeMode="contain" />
+        </View>
+
+        <Text style={styles.title}>PEAKPACT</Text>
+        <Text style={styles.subtitle}>Secure your command center and continue your pact.</Text>
+
+        <View style={styles.modeRow}>
+          <Pressable
+            style={[styles.modeButton, mode === "SIGN_IN" && styles.modeButtonActive]}
+            onPress={() => onModeChange("SIGN_IN")}
+          >
+            <Text style={styles.modeText}>SIGN IN</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.modeButton, mode === "SIGN_UP" && styles.modeButtonActive]}
+            onPress={() => onModeChange("SIGN_UP")}
+          >
+            <Text style={styles.modeText}>SIGN UP</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.form}>
+          <Text style={styles.fieldLabel}>EMAIL</Text>
+          <TextInput
+            style={styles.input}
+            value={form.email}
+            onChangeText={(value) => onFieldChange("email", value)}
+            placeholder="email@peakpact.local"
+            keyboardType="email-address"
+            placeholderTextColor="#7a8ba0"
+            autoCapitalize="none"
+            autoCorrect={false}
+            selectionColor="#25F9D5"
+          />
+          <Text style={styles.fieldLabel}>PASSWORD</Text>
+          <TextInput
+            style={styles.input}
+            value={form.password}
+            onChangeText={(value) => onFieldChange("password", value)}
+            placeholder="PASSWORD"
+            placeholderTextColor="#7a8ba0"
+            secureTextEntry
+            autoCorrect={false}
+            selectionColor="#25F9D5"
+          />
+        </View>
+
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <Text style={styles.status}>{statusMessage}</Text>
+
+        <Pressable style={styles.submit} onPress={onSubmit} disabled={busy}>
+          <Text style={styles.submitText}>{busy ? "PROCESSING..." : "GRANT ACCESS"}</Text>
         </Pressable>
-        <Pressable
-          style={[styles.modeButton, mode === "SIGN_UP" && styles.modeButtonActive]}
-          onPress={() => onModeChange("SIGN_UP")}
-        >
-          <Text style={styles.modeText}>SIGN UP</Text>
-        </Pressable>
+        <Text style={styles.footerHint}>No codename required. Just secure access.</Text>
       </View>
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          value={form.email}
-          onChangeText={(value) => onFieldChange("email", value)}
-          placeholder="email@peakpact.local"
-          keyboardType="email-address"
-          placeholderTextColor="#999"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          value={form.codename}
-          onChangeText={(value) => onFieldChange("codename", value)}
-          placeholder="CODENAME"
-          placeholderTextColor="#999"
-        />
-        <TextInput
-          style={styles.input}
-          value={form.password}
-          onChangeText={(value) => onFieldChange("password", value)}
-          placeholder="PASSWORD"
-          placeholderTextColor="#999"
-          secureTextEntry
-        />
-      </View>
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-      <Text style={styles.status}>{statusMessage}</Text>
-      <Pressable style={styles.submit} onPress={onSubmit} disabled={busy}>
-        <Text style={styles.submitText}>{busy ? "PROCESSING..." : "GRANT ACCESS"}</Text>
-      </Pressable>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
     justifyContent: "center",
-    backgroundColor: "#000",
+    padding: 20,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(2, 6, 14, 0.72)",
+  },
+  card: {
+    position: "relative",
+    borderWidth: 1,
+    borderColor: "rgba(37, 249, 213, 0.28)",
+    backgroundColor: "rgba(5, 10, 22, 0.9)",
+    borderRadius: 28,
+    padding: 24,
+    shadowColor: "#25F9D5",
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  badge: {
+    borderWidth: 1,
+    borderColor: "rgba(79, 163, 255, 0.34)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(79, 163, 255, 0.12)",
+  },
+  badgeText: {
+    color: "#8eb2ff",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1.2,
   },
   title: {
-    color: "#00FF00",
-    fontSize: 22,
+    color: "#F7FCFF",
+    fontSize: 24,
     fontFamily: "monospace",
     fontWeight: "700",
-    marginBottom: 24,
+    marginBottom: 6,
     textAlign: "center",
+  },
+  subtitle: {
+    color: "#94aac0",
+    fontSize: 12,
+    fontFamily: "monospace",
+    textAlign: "center",
+    marginBottom: 18,
+    lineHeight: 18,
   },
   modeRow: {
     flexDirection: "row",
@@ -96,13 +157,17 @@ const styles = StyleSheet.create({
   },
   modeButton: {
     borderWidth: 1,
-    borderColor: "#00FF00",
+    borderColor: "rgba(79, 163, 255, 0.3)",
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 999,
+    minWidth: 96,
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   modeButtonActive: {
-    backgroundColor: "#00FF00",
+    backgroundColor: "rgba(37, 249, 213, 0.16)",
+    borderColor: "rgba(37, 249, 213, 0.6)",
   },
   modeText: {
     color: "#F4F4F5",
@@ -111,21 +176,31 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   form: {
-    gap: 10,
+    gap: 8,
+  },
+  fieldLabel: {
+    color: "#87d8ff",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginTop: 4,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#00FF00",
-    padding: 12,
-    borderRadius: 10,
+    borderColor: "rgba(79, 163, 255, 0.34)",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
     color: "#F4F4F5",
-    marginBottom: 10,
+    marginBottom: 6,
     fontFamily: "monospace",
+    backgroundColor: "rgba(3, 8, 18, 0.84)",
   },
   error: {
-    color: "#FF0033",
+    color: "#FF5DBD",
     fontFamily: "monospace",
     marginBottom: 8,
+    marginTop: 6,
   },
   status: {
     color: "#C0C0C8",
@@ -133,14 +208,33 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   submit: {
-    backgroundColor: "#00FF00",
+    backgroundColor: "rgba(37, 249, 213, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(37, 249, 213, 0.54)",
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
+    shadowColor: "#4FA3FF",
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
   },
   submitText: {
-    color: "#000",
+    color: "#F7FCFF",
     fontFamily: "monospace",
     fontWeight: "700",
+  },
+  footerHint: {
+    color: "#7a8ba0",
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginTop: 12,
+    textAlign: "center",
+  },
+  logo: {
+    width: 86,
+    height: 86,
+    alignSelf: "center",
   },
 });

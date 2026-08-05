@@ -14,9 +14,6 @@ export function validateAccessSubmission(mode: AccessMode, form: AccessFormState
   if (!email) {
     return { ok: false, message: "EMAIL REQUIRED" };
   }
-  if (!codename) {
-    return { ok: false, message: "CODENAME REQUIRED" };
-  }
   if (mode === "SIGN_UP" && password.length < 6) {
     return { ok: false, message: "PASSWORD MUST BE 6+ CHARACTERS" };
   }
@@ -24,7 +21,7 @@ export function validateAccessSubmission(mode: AccessMode, form: AccessFormState
   return {
     ok: true,
     normalizedEmail: email.toLowerCase(),
-    normalizedCodename: codename.toUpperCase(),
+    normalizedCodename: codename ? codename.toUpperCase() : "OPERATOR",
     message: "ACCESS VALIDATED",
   };
 }
