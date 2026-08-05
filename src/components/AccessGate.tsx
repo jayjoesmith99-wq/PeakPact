@@ -1,9 +1,8 @@
 import React from "react";
-import { Image, ImageBackground, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { type AccessFormState, type AccessMode } from "../services/accessGate";
 
 const accessLogo = require("../../assets/logo.peakpact.png");
-const accessBackdrop = require("../../assets/elite-splash.jpg");
 
 export default function AccessGate({
   mode,
@@ -25,8 +24,9 @@ export default function AccessGate({
   onSubmit: () => void;
 }) {
   return (
-    <ImageBackground source={accessBackdrop} style={styles.container} resizeMode="cover">
-      <View style={styles.overlay} />
+    <View style={styles.container}>
+      <View style={styles.backgroundGlow} />
+      <View style={styles.backgroundGlowSecondary} />
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.badge}>
@@ -87,7 +87,7 @@ export default function AccessGate({
         </Pressable>
         <Text style={styles.footerHint}>No codename required. Just secure access.</Text>
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -96,10 +96,27 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
+    backgroundColor: "#040812",
   },
-  overlay: {
+  backgroundGlow: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(2, 6, 14, 0.72)",
+    backgroundColor: "rgba(37, 249, 213, 0.06)",
+    top: -80,
+    left: -80,
+    right: "40%",
+    bottom: "45%",
+    borderRadius: 999,
+    transform: [{ rotate: "12deg" }],
+  },
+  backgroundGlowSecondary: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(79, 163, 255, 0.08)",
+    top: "45%",
+    left: "35%",
+    right: -80,
+    bottom: -80,
+    borderRadius: 999,
+    transform: [{ rotate: "-10deg" }],
   },
   card: {
     position: "relative",
