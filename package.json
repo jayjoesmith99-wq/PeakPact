@@ -2,26 +2,54 @@
   "name": "peakpact",
   "version": "1.0.0",
   "main": "index.ts",
+  "expo": {
+    "web": {
+      "bundler": "metro"
+    }
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "npx tsx --test tests/*.test.ts",
+    "export:web": "expo export -p web",
+    "release:check": "npm run typecheck && npm run test && npm run export:web",
+    "build:android": "npx eas-cli build --platform android --profile production",
+    "build:android:aab": "npx eas-cli build --platform android --profile production-aab",
+    "build:android:apk": "npx eas-cli build --platform android --profile preview-apk",
+    "build:ios": "npx eas-cli build --platform ios --profile production",
+    "submit:android": "npx eas-cli submit --platform android --profile production",
+    "release:android-web": "npm run release:check && npm run build:android"
   },
   "dependencies": {
+    "@expo/webpack-config": "^0.17.0",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.110.7",
-    "expo": "~54.0.35",
-    "expo-status-bar": "~3.0.9",
+    "@types/react-native": "~0.69.1",
+    "expo": "^57.0.10",
+    "expo-av": "~16.0.8",
+    "expo-status-bar": "~57.0.1",
+    "expo-video": "~57.0.2",
     "lucide-react-native": "^1.24.0",
     "nativewind": "^4.2.6",
-    "react": "19.1.0",
-    "react-native": "0.81.5",
-    "react-native-svg": "^15.15.5",
+    "nice-try": "^4.0.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-purchases": "^10.6.0",
+    "react-native-purchases-ui": "^10.6.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.0",
     "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
-    "@types/react": "~19.1.0",
-    "typescript": "~5.9.2"
+    "@types/jest": "29.5.14",
+    "@types/node": "^26.1.2",
+    "@types/react": "~19.2.4",
+    "babel-preset-expo": "~57.0.0",
+    "typescript": "~6.0.3"
   },
   "private": true
 }
