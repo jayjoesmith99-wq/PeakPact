@@ -1249,14 +1249,14 @@ export default function App() {
 
   useEffect(() => {
     void AsyncStorage.getItem("@peakpact/boot-seen")
-      .then((v) => {
+      .then((v: string | null) => {
         setBootReady(v === "true");
       })
       .catch(() => setBootReady(false));
   }, []);
 
   useEffect(() => {
-    void AsyncStorage.getItem("@peakpact/tutorial-done").then((v) => {
+    void AsyncStorage.getItem("@peakpact/tutorial-done").then((v: string | null) => {
       if (v === "true") setTutorialCompleted(true);
     });
   }, []);
