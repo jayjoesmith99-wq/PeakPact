@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * SoundEngine — cross-platform audio for PeakPact button feedback.
  *
@@ -18,7 +17,7 @@ import type { DesignTemplateId } from './designTemplates';
 // ─── Asset map (used only on native) ──────────────────────────────────────
 
 const ASSETS: Record<DesignTemplateId, ReturnType<typeof require>> = {
-  'core':                  require('../../assets/sounds/click-core.wav'),
+  'core':                    require('../../assets/sounds/click-core.wav'),
   'terminal-cyber-dungeon':require('../../assets/sounds/click-terminal.wav'),
   'mecha-hud-pilot':       require('../../assets/sounds/click-mecha.wav'),
   'litrpg-stat-sheet':     require('../../assets/sounds/click-litrpg.wav'),
@@ -48,8 +47,6 @@ function getCtx(): AudioContext | null {
 }
 
 // ─── Web synthesisers — one per template ──────────────────────────────────
-
-const τ = Math.PI * 2;
 
 function webSynth(
   ctx: AudioContext,
@@ -198,7 +195,7 @@ function webApex(ctx: AudioContext): void {
 }
 
 const WEB_SYNTHS: Record<DesignTemplateId, (ctx: AudioContext) => void> = {
-  'core':                   webCore,
+  'core':                    webCore,
   'terminal-cyber-dungeon': webTerminal,
   'mecha-hud-pilot':        webMecha,
   'litrpg-stat-sheet':      webLitrpg,
@@ -316,16 +313,4 @@ export function playBootThud(): void {
     return;
   }
   playTemplateSound('mecha-hud-pilot');
-=======
-export function initAudio() {
-  return;
-}
-
-export function playTemplateSound(templateId: string) {
-  return;
-}
-
-export function unloadAudio() {
-  return;
->>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
 }
