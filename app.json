@@ -28,8 +28,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar",
-      "expo-video"
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow PeakPact to access your microphone to record completion reports."
+        }
+      ]
     ]
   }
 }

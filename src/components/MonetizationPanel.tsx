@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ProductPlan } from '../services/productPlan';
@@ -6,7 +5,7 @@ import type { ProductPlan } from '../services/productPlan';
 type MonetizationPanelProps = {
   visible: boolean;
   accent: string;
-  plan: ProductPlan;
+  plan: ProductPlan | string;
   isDeviceTrialActive?: boolean;
   trialDaysRemaining?: number;
 };
@@ -53,6 +52,7 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
     <View style={[styles.panel, { borderColor: accent }]}>
       <Text style={[styles.header, { color: accent }]}>[ SYSTEM OVERRIDES // PREMIUM ASCENSION ]</Text>
       <Text style={[styles.body, { color: accent }]}>PeakPact is built for operators who want discipline without friction. The core loop stays free; premium removes the drag so your focus stays on execution.</Text>
+      
       <View style={styles.statusCard}>
         <Text style={[styles.statusLabel, { color: accent }]}>CURRENT STATUS</Text>
         <Text style={styles.statusValue}>{plan}</Text>
@@ -60,7 +60,9 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
           <Text style={styles.statusTrail}>DEVICE TRIAL ACTIVE • PREMIUM ACCESS REMAINS LIVE FOR {trialDaysRemaining} MORE DAY(S)</Text>
         ) : null}
       </View>
+      
       <Text style={[styles.body, { color: accent }]}>Premium includes a 7-day free trial per new device, free PP bonuses of +100 PP/month or +1800 PP/year, and a four-template visual ladder mapped to 180/260/320 PP prestige economics.</Text>
+      
       {tiers.map((tier) => (
         <View key={tier.title} style={styles.tierCard}>
           <View style={styles.tierHeaderRow}>
@@ -71,35 +73,11 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
           <Text style={styles.tierPrice}>{tier.price}</Text>
         </View>
       ))}
+
       <Pressable style={[styles.cta, { borderColor: accent }]}>
         <Text style={[styles.ctaText, { color: accent }]}>UPGRADE TO PREMIUM ASCENSION</Text>
       </Pressable>
       <Text style={styles.footer}>Discipline stays free. Friction is premium.</Text>
-=======
-import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-
-export default function MonetizationPanel({
-  visible,
-  accent,
-  plan,
-}: {
-  visible: boolean;
-  accent: string;
-  plan: string;
-}) {
-  if (!visible) {
-    return null;
-  }
-  return (
-    <View style={[styles.panel, { borderColor: accent }]}> 
-      <Text style={[styles.title, { color: accent }]}>PREMIUM PAYWALL</Text>
-      <Text style={styles.body}>Upgrade to Premium for voice recording, mission autoload, and time dilation.</Text>
-      <Pressable style={[styles.action, { borderColor: accent }]}> 
-        <Text style={[styles.actionText, { color: accent }]}>OPEN PAYWALL</Text>
-      </Pressable>
-      <Text style={styles.note}>Current plan: {plan}</Text>
->>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
     </View>
   );
 }
@@ -107,8 +85,6 @@ export default function MonetizationPanel({
 const styles = StyleSheet.create({
   panel: {
     borderWidth: 1,
-<<<<<<< HEAD
-    borderColor: '#00FF66',
     padding: 12,
     marginBottom: 12,
     backgroundColor: '#050b08',
@@ -216,40 +192,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Courier New',
     fontSize: 10,
     color: '#00FF66',
-=======
-    borderRadius: 14,
-    padding: 12,
-    marginTop: 12,
-    backgroundColor: "rgba(0,0,0,0.36)",
-  },
-  title: {
-    fontFamily: "monospace",
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  body: {
-    fontFamily: "monospace",
-    fontSize: 11,
-    color: "#C0C0C8",
-    marginBottom: 10,
-  },
-  action: {
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 10,
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  actionText: {
-    fontFamily: "monospace",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  note: {
-    fontFamily: "monospace",
-    fontSize: 10,
-    color: "#888",
->>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
   },
 });

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import { supabase } from '../../supabaseClient';
-import { createClientPayloadSignature } from './progressService';
-import { type SupportedLanguage } from './i18n';
+import type { SupportedLanguage } from './i18n';
 
-=======
->>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
 export type PactContract = {
   task: string;
   durationMinutes: number;
@@ -12,7 +7,6 @@ export type PactContract = {
   acceptedAt: string;
 };
 
-<<<<<<< HEAD
 export type VerificationResult = {
   verified: boolean;
   pp_awarded: number;
@@ -50,8 +44,8 @@ const strengthKeywords = ['heavy lifting', 'deadlift', 'squat', 'bench', 'press'
 const cardioKeywords = ['run', 'jog', 'cardio', 'sprint', 'bike', 'futas', 'futast', 'futok', 'bringazas', 'kardio', 'correr', 'carrera', 'corrí', 'running', 'course', 'lauf', 'cycling', 'ciclismo', 'vélo', 'corrida', 'correndo', 'ciclismo', 'бег', 'бегал', 'велосипед', 'кардио'];
 const disciplineKeywords = ['study', 'read', 'learn', 'code', 'debug', 'build', 'write', 'tanulas', 'tanulok', 'olvasas', 'olvastam', 'kodolas', 'programozas', 'programozok', 'estudi', 'estudie', 'estudié', 'estudio', 'leer', 'leí', 'aprendí', 'aprendizaje', 'escribir', 'escribí', 'escritura', 'lecture', 'étudier', 'étudié', 'lecture', 'écrire', 'schreiben', 'lernen', 'gelernt', 'studieren', 'studierte', 'leggere', 'studio', 'scrivere', 'imparare', 'imparato', 'estudar', 'estudei', 'aprendi', 'escrever', 'leitura', 'escrita', 'изучал', 'учился', 'читал', 'писал', 'чтение', 'письмо', 'учеба'];
 const vaguePhrases = ['no idea', 'nincs otlet', 'semm', 'nothing', 'nothing today', 'i have no idea', 'nincsen otlet', 'nem tudom', 'don\'t know', 'something productive', 'maybe later', 'valami', 'no se', 'nada', 'quizá luego', 'maybe', 'peut-être', 'vielleicht', 'forse', 'não sei', 'nada', 'talvez depois', 'не знаю', 'может позже', 'ничего'];
-const concreteActionMarkers = ['completed', 'finished', 'done', 'went', 'ran', 'studied', 'read', 'wrote', 'coded', 'built', 'debugged', 'lifted', 'worked out', 'trained', 'practiced', 'completed', 'terminé', 'terminé', 'acabé', 'estudié', 'leí', 'escribí', 'codifiqué', 'construí', 'corrí', 'corrí', 'entraîné', 'lu', 'écrit', 'programmiert', 'gelernt', 'studiert', 'trainiert', 'прочитал', 'писал', 'изучал', 'проделал', 'бегал', 'тренировался'];
-const measurableDurationPatterns = /(\d+)\s*(?:min|minute|minutes|mins|hr|hour|hours|perc|perces|percet|percek|óra|órát|h|m|minut|minuta|minutos|minuti|мин|час|часа|часов|минут|минуты|分|時間|時間間|分間|分钟|小时)/i;
+const concreteActionMarkers = ['completed', 'finished', 'done', 'went', 'ran', 'studied', 'read', 'wrote', 'coded', 'built', 'debugged', 'lifted', 'worked out', 'trained', 'practiced', 'terminé', 'acabé', 'estudié', 'leí', 'escribí', 'codifiqué', 'construí', 'corrí', 'entraîné', 'lu', 'écrit', 'programmiert', 'gelernt', 'studiert', 'trainiert', 'прочитал', 'писал', 'изучал', 'проделал', 'бегал', 'тренировался'];
+const measurableDurationPatterns = /(\d+)\s*(?:min|minute|minutes|mins|hr|hour|hours|perc|perces|percet|percek|óra|órát|h|m|minut|minuta|minutos|minuti|мин|час|часа|часов|минут|минуты|分|時間|間|分間|分钟|小时)/i;
 
 const inferEffortCategory = (normalized: string): 'STRENGTH' | 'CARDIO' | 'DISCIPLINE' | null => {
   const strengthScore = strengthKeywords.filter((keyword) => normalized.includes(keyword)).length;
@@ -355,51 +349,5 @@ export const submitToVerificationEngine = async (
   deviceTimestamp: string = new Date().toISOString(),
   contract?: PactContract,
 ): Promise<VerificationResult> => {
-  const signature = await createClientPayloadSignature(userId, text, deviceTimestamp);
-
-  if (!supabaseUrl.includes('your-project')) {
-    try {
-      const { data, error } = await supabase.functions.invoke<VerificationResult>('peakpact-verify', {
-        body: {
-          content: text,
-          type: 'text',
-          user_id: userId,
-          device_timestamp: deviceTimestamp,
-          signature,
-          contract,
-        },
-      });
-
-      if (!error && data && !shouldFallbackToLocalHeuristic(data)) {
-        return data;
-      }
-    } catch {
-      // Fall back to the local heuristic verifier when the edge function is unavailable.
-    }
-  }
-
   return buildStructuredVerification(text, contract);
 };
-=======
-export function buildStructuredVerification(text: string, contract?: PactContract) {
-  const verified = text.trim().length > 0;
-  return {
-    verified,
-    pp_awarded: verified ? Math.max(1, Math.min(60, Math.round((contract?.stakePP ?? 10) / 2))) : -10,
-    terminal_response: verified
-      ? "> PACT VERIFIED. REWARD ALLOCATED."
-      : "> PACT REJECTED. NO PROGRESS DETECTED.",
-    severity: verified ? "LOW" : "HIGH",
-    attribute_scale: verified ? 0.75 : 0.2,
-  };
-}
-
-export async function submitToVerificationEngine(
-  text: string,
-  userId: string,
-  timestamp: string,
-  contract?: PactContract,
-) {
-  return buildStructuredVerification(text, contract);
-}
->>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
