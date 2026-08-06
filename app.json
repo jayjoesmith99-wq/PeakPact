@@ -22,7 +22,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.PeakPact"
+      "package": "com.anonymous.PeakPact",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +38,11 @@
           "microphonePermission": "Allow PeakPact to access your microphone to record completion reports."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "83a77677-1639-418e-aeca-ec783dcf075e"
+      }
+    }
   }
 }
