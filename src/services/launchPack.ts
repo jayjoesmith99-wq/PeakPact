@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export type LaunchCopyPack = {
   appTitleOptions: string[];
   shortDescription: string;
@@ -40,3 +41,13 @@ export const getLaunchCopyPack = (): LaunchCopyPack => ({
     'PeakPact is where accountability gets technical.',
   ],
 });
+=======
+export function getLaunchCopyPack() {
+  return {
+    appTitleOptions: ["PeakPact", "PeakPact Elite", "PeakPact Terminal"],
+    shortDescription: "Stay accountable with mission-driven habit enforcement.",
+    screenshotCaptions: ["Mission planning", "Progress tracking", "Crew activation"],
+    marketingHooks: ["Build discipline", "Stay consistent", "Earn digital rewards", "Command your routine"],
+  };
+}
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37

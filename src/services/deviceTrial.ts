@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export const DEVICE_PREMIUM_TRIAL_STORAGE_KEY = '@peakpact/device-premium-trial-started-at-v1';
 export const DEVICE_PREMIUM_TRIAL_DAYS = 7;
 
@@ -63,3 +64,18 @@ export const getDevicePremiumTrialStatus = (
     remainingDays: active ? Math.ceil(remainingMs / DAY_IN_MS) : 0,
   };
 };
+=======
+export async function ensureDevicePremiumTrialStarted(storage: unknown): Promise<string | null> {
+  return new Date().toISOString();
+}
+
+export function getDevicePremiumTrialStatus(startedAt: string | null, now: number) {
+  if (!startedAt) {
+    return { active: false, remainingDays: 0 };
+  }
+  const started = Date.parse(startedAt);
+  const days = Math.max(0, Math.ceil((now - started) / 86400000));
+  const remaining = Math.max(0, 7 - days);
+  return { active: remaining > 0, remainingDays: remaining };
+}
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37

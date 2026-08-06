@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
@@ -35,11 +36,27 @@ export default function BrandMark({ accent = MATRIX_GREEN, size = 56, showWordma
           <Text style={[styles.wordmarkSubtitle, { color: accentSoft }]}>ZERO TOLERANCE</Text>
         </View>
       ) : null}
+=======
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+
+export default function BrandMark({
+  accent,
+  size,
+}: {
+  accent: string;
+  size: number;
+}) {
+  return (
+    <View style={[styles.container, { borderColor: accent, width: size, height: size }]}> 
+      <Text style={[styles.text, { color: accent, fontSize: Math.max(10, size / 6) }]}>PK</Text>
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   shell: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -61,5 +78,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 2,
     marginTop: 2,
+=======
+  container: {
+    borderWidth: 1,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
+  text: {
+    fontFamily: "monospace",
+    fontWeight: "700",
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
   },
 });

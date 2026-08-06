@@ -5,6 +5,7 @@ export type ComplianceConsent = {
   consentedAt: string | null;
 };
 
+<<<<<<< HEAD
 export const hasRequiredComplianceConsent = (consent: ComplianceConsent): boolean => (
   consent.privacyAccepted
   && consent.termsAccepted
@@ -42,3 +43,38 @@ export const getTermsOfUseText = (): string[] => [
   'PeakPact is provided as a self-improvement and accountability tool and is not a substitute for professional medical, legal, or psychological advice.',
   'The operator remains responsible for their own decisions, and the company may suspend or restrict access for abuse or misconduct.',
 ];
+=======
+export function createDefaultComplianceConsent(): ComplianceConsent {
+  return {
+    privacyAccepted: false,
+    termsAccepted: false,
+    ageConfirmed: false,
+    consentedAt: null,
+  };
+}
+
+export function hasRequiredComplianceConsent(consent: ComplianceConsent): boolean {
+  return consent.privacyAccepted && consent.termsAccepted && consent.ageConfirmed;
+}
+
+export function buildComplianceNotice(consent: ComplianceConsent): string {
+  if (hasRequiredComplianceConsent(consent)) {
+    return "> COMPLIANCE CHECK PASSED.";
+  }
+  return "> CONSENT NEEDED BEFORE PROCEEDING. OPEN SYSTEM SETTINGS.";
+}
+
+export function getPrivacyPolicyText(): string[] {
+  return [
+    "We collect minimal usage data to maintain playback and progress.",
+    "Local storage is used for session persistence and onboarding state.",
+  ];
+}
+
+export function getTermsOfUseText(): string[] {
+  return [
+    "Do not use this app for harmful or illicit tasks.",
+    "This is a demo scaffold and not a legal agreement.",
+  ];
+}
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37

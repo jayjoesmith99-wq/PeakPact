@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export type ProductPlan = 'BASIC' | 'PREMIUM';
 
 export type PlanFeatures = {
@@ -33,3 +34,26 @@ export const getFeatureLockMessage = (feature: keyof PlanFeatures): string => {
       return 'THIS OVERRIDE REQUIRES PREMIUM ACCESS.';
   }
 };
+=======
+export type ProductPlan = "BASIC" | "PREMIUM";
+
+export function getActiveProductPlan(): ProductPlan {
+  return "BASIC";
+}
+
+export function getFeatureLockMessage(feature: string): string {
+  return `PREMIUM FEATURE LOCKED: ${feature}`;
+}
+
+export function getPlanFeatures(plan: ProductPlan) {
+  return {
+    voiceCapture: plan === "PREMIUM",
+    missionAutoload: plan === "PREMIUM",
+    timeDilation: plan === "PREMIUM",
+  };
+}
+
+export function resolveEffectiveProductPlan(basePlan: ProductPlan, trialActive: boolean) {
+  return trialActive ? "PREMIUM" : basePlan;
+}
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37

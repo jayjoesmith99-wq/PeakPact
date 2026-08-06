@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * SoundEngine — cross-platform audio for PeakPact button feedback.
  *
@@ -315,4 +316,16 @@ export function playBootThud(): void {
     return;
   }
   playTemplateSound('mecha-hud-pilot');
+=======
+export function initAudio() {
+  return;
+}
+
+export function playTemplateSound(templateId: string) {
+  return;
+}
+
+export function unloadAudio() {
+  return;
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
 }

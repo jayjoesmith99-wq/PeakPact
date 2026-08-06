@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { AuthChangeEvent, Session, Subscription, User } from '@supabase/supabase-js';
 import { supabase } from '../../supabaseClient';
 
@@ -35,6 +36,46 @@ export const extractOperatorCodename = (user?: User | null, fallbackEmail?: stri
 };
 
 export const signUpOperator = async ({
+=======
+import { type AccessMode } from "./accessGate";
+
+export function extractOperatorCodename(user: { email?: string } | null, fallback?: string) {
+  if (user?.email) {
+    return user.email.split("@")[0].toUpperCase();
+  }
+  return (fallback || "OPERATOR").toUpperCase();
+}
+
+export function isLiveAuthEnabled(): boolean {
+  return false;
+}
+
+export function isPeakPactEliteOverride(email: string | null, userId: string | null): boolean {
+  return false;
+}
+
+export async function restoreOperatorSession(): Promise<{ user: { email?: string; id?: string } } | null> {
+  return null;
+}
+
+export type AuthResult = {
+  ok: boolean;
+  message: string;
+  user: { email?: string; id?: string } | null;
+  requiresEmailConfirmation?: boolean;
+};
+
+export async function signInOperator({ email, password }: { email: string; password: string }): Promise<AuthResult> {
+  return {
+    ok: true,
+    message: "ACCESS GRANTED",
+    user: { email, id: "local-user" },
+    requiresEmailConfirmation: false,
+  };
+}
+
+export async function signUpOperator({
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37
   email,
   password,
   codename,
@@ -42,6 +83,7 @@ export const signUpOperator = async ({
   email: string;
   password: string;
   codename: string;
+<<<<<<< HEAD
 }): Promise<AuthOutcome> => {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -145,3 +187,25 @@ export const signOutOperator = async (): Promise<AuthOutcome> => {
     message: 'TERMINAL LOCKED.',
   };
 };
+=======
+}): Promise<AuthResult> {
+  return {
+    ok: true,
+    message: "ACCOUNT CREATED",
+    user: { email, id: "local-user" },
+    requiresEmailConfirmation: false,
+  };
+}
+
+export async function signOutOperator(): Promise<{ ok: boolean; message: string }> {
+  return { ok: true, message: "TERMINAL LOCKED" };
+}
+
+export function subscribeToAuthState(
+  callback: (event: unknown, session: { user?: { email?: string; id?: string } } | null) => void,
+) {
+  return {
+    unsubscribe: () => {},
+  };
+}
+>>>>>>> 2f1cd419750ef14ad65a62a00c79510454ca7b37

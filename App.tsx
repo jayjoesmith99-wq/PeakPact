@@ -163,16 +163,16 @@ import {
 
 type PactStatus = "ACTIVE" | "ALERT" | "SYNCING" | "REDSTATE";
 
-const MATRIX_GREEN = "#00FF00";
-const AMBER = "#FFB000";
-const CRIMSON = "#FF0033";
-const PEAK_CRIMSON = "#FF2A2A";
-const BONE_WHITE = "#F4F4F5";
+const MATRIX_GREEN = "#25F9D5";
+const AMBER = "#FFC95C";
+const CRIMSON = "#FF4ED8";
+const PEAK_CRIMSON = "#FF5DBD";
+const BONE_WHITE = "#F7FCFF";
 const LOCAL_ACCESS_SESSION_KEY = "@peakpact/local-access-session";
-const terminalBackdrop = require("./assets/background.peakpact.png");
+const terminalBackdrop = require("./assets/elite-backdrop.jpeg");
 const peakpactIcon = require("./assets/icon.png");
 const peakpactAdaptiveIcon = require("./assets/adaptive-icon.png");
-const peakpactSplash = require("./assets/splash-icon.png");
+const peakpactSplash = require("./assets/elite-splash.jpg");
 
 type PactLogEntry = {
   id: string;
@@ -3037,7 +3037,7 @@ export default function App() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
         <ImageBackground
-          source={require("./assets/background.peakpact.png")}
+          source={terminalBackdrop}
           resizeMode="cover"
           style={styles.authBootShell}
         >
@@ -3128,6 +3128,7 @@ export default function App() {
             { borderColor: accent, boxShadow: `0 0 18px ${accent}` },
           ]}
         />
+        <View style={styles.fxGlow} />
         <ScanlineOverlay />
         {isWeb && (
           <View
@@ -5522,11 +5523,11 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#030711",
   },
   keyboardShell: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#030711",
   },
   authBootShell: {
     flex: 1,
@@ -5535,29 +5536,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.74)",
+    backgroundColor: "rgba(2, 7, 16, 0.90)",
     paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: "rgba(37, 249, 213, 0.32)",
   },
   authBootLabel: {
-    color: MATRIX_GREEN,
+    color: "rgba(37, 249, 213, 0.95)",
     fontFamily: "monospace",
     fontSize: 12,
     letterSpacing: 3,
   },
   authBootTitle: {
-    color: "#f5fff8",
+    color: "#F7FCFF",
     fontFamily: "monospace",
     fontSize: 24,
     fontWeight: "700",
     marginTop: 10,
+    textShadowColor: "rgba(37, 249, 213, 0.45)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 14,
   },
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000000",
+    backgroundColor: "#030711",
   },
   terminalBackdropVeil: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 4, 3, 0.82)",
+    backgroundColor: "rgba(2, 7, 16, 0.76)",
   },
   screenJitter: {
     transform: [{ translateX: 0.6 }, { translateY: 0.4 }],
@@ -5566,15 +5572,27 @@ const styles = StyleSheet.create({
   holoLayer: {
     ...StyleSheet.absoluteFillObject,
     borderWidth: 1,
-    borderColor: MATRIX_GREEN,
+    borderColor: "rgba(37, 249, 213, 0.30)",
+    backgroundColor: "rgba(37, 249, 213, 0.04)",
     pointerEvents: "none",
+  },
+  fxGlow: {
+    ...StyleSheet.absoluteFillObject,
+    top: 22,
+    left: 22,
+    right: 22,
+    height: 140,
+    borderRadius: 36,
+    backgroundColor: "rgba(37, 249, 213, 0.10)",
+    pointerEvents: "none",
+    zIndex: 0,
   },
   scanlineOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: MATRIX_GREEN,
-    opacity: 0.08,
+    borderColor: "rgba(79, 163, 255, 0.16)",
+    opacity: 0.16,
     pointerEvents: "none",
   },
   scanlineBar: {
@@ -5582,6 +5600,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
+    backgroundColor: "rgba(37, 249, 213, 0.16)",
   },
   shell: {
     flex: 1,
@@ -5596,14 +5615,14 @@ const styles = StyleSheet.create({
   appShell: {
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,42,42,0.16)",
-    backgroundColor: "rgba(6,2,2,0.95)",
+    borderColor: "rgba(37, 249, 213, 0.24)",
+    backgroundColor: "rgba(5, 10, 18, 0.96)",
     padding: 14,
-    shadowColor: "#FF2A2A",
-    shadowOpacity: 0.1,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
+    shadowColor: "#25F9D5",
+    shadowOpacity: 0.34,
+    shadowRadius: 36,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
   },
   brandHeaderRow: {
     flexDirection: "row",
@@ -5673,13 +5692,13 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   title: {
-    color: MATRIX_GREEN,
+    color: "#E8FFFF",
     fontFamily: "monospace",
     fontSize: 24,
     fontWeight: "700",
   },
   operatorText: {
-    color: "#b6f7d7",
+    color: "#A6FEFF",
     fontFamily: "monospace",
     fontSize: 11,
     letterSpacing: 2,
@@ -5697,17 +5716,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   heroCard: {
-    borderColor: MATRIX_GREEN,
+    borderColor: "rgba(37, 249, 213, 0.34)",
     borderWidth: 1,
     padding: 14,
     marginBottom: 12,
     borderRadius: 20,
-    backgroundColor: "rgba(6, 16, 12, 0.96)",
-    shadowColor: "#00ff00",
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
+    backgroundColor: "rgba(7, 12, 24, 0.98)",
+    shadowColor: "#4FA3FF",
+    shadowOpacity: 0.24,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
   },
   heroCardCore: {
     borderRadius: 20,
@@ -5736,11 +5755,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   heroPill: {
-    borderColor: MATRIX_GREEN,
+    borderColor: "rgba(76, 255, 243, 0.35)",
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: "rgba(0, 255, 0, 0.05)",
+    backgroundColor: "rgba(76, 255, 243, 0.12)",
   },
   heroPillCore: {
     borderRadius: 8,
@@ -5976,15 +5995,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   panel: {
-    borderColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(79, 163, 255, 0.22)",
     borderWidth: 1,
     padding: 16,
     marginBottom: 12,
     borderRadius: 18,
-    backgroundColor: "rgba(10,4,4,0.92)",
-    shadowColor: "#FF2A2A",
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
+    backgroundColor: "rgba(6, 10, 18, 0.96)",
+    shadowColor: "#25F9D5",
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
@@ -6399,7 +6418,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   input: {
-    borderColor: MATRIX_GREEN,
+    borderColor: "rgba(79, 163, 255, 0.38)",
     borderWidth: 1,
     minHeight: 70,
     color: "#F4F4F5",
@@ -6408,7 +6427,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.72)",
+    backgroundColor: "rgba(3, 8, 18, 0.90)",
   },
   dailyLoopCard: {
     borderWidth: 1,
@@ -6504,15 +6523,17 @@ const styles = StyleSheet.create({
   },
   buttonPrimary: {
     flex: 1,
-    backgroundColor: MATRIX_GREEN,
+    backgroundColor: "rgba(37, 249, 213, 0.16)",
     paddingVertical: 10,
     alignItems: "center",
     borderRadius: 14,
-    shadowColor: "#00ff00",
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: "rgba(37, 249, 213, 0.48)",
+    shadowColor: "#4FA3FF",
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
   },
   buttonPressed: {
     opacity: 0.86,
@@ -6520,15 +6541,15 @@ const styles = StyleSheet.create({
   },
   buttonSecondary: {
     flex: 1,
-    borderColor: MATRIX_GREEN,
+    borderColor: "rgba(79, 163, 255, 0.36)",
     borderWidth: 1,
     paddingVertical: 10,
     alignItems: "center",
     borderRadius: 14,
-    backgroundColor: "rgba(0, 0, 0, 0.52)",
+    backgroundColor: "rgba(8, 13, 22, 0.84)",
   },
   buttonText: {
-    color: "#000000",
+    color: "#F7FCFF",
     fontFamily: "monospace",
     fontWeight: "700",
   },
