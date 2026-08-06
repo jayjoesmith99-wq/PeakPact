@@ -15,7 +15,8 @@
     "production-aab": {
       "android": {
         "buildType": "app-bundle"
-      }
+      },
+      "node": "22.x"
     }
   },
   "submit": {
