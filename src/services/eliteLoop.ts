@@ -1,4 +1,4 @@
-export function getDailyChallenge({ dailyPactsToday, pp, streak, redState, isPremium, }: { dailyPactsToday: number; pp: number; streak: number; redState: boolean; isPremium: boolean; }) {
+export function getDailyChallenge({ dailyPactsToday, pp: _pp, streak: _streak, redState: _redState, isPremium, }: { dailyPactsToday: number; pp: number; streak: number; redState: boolean; isPremium: boolean; }) {
   return {
     title: "DISCIPLINE CHALLENGE",
     body: "Submit one more pact and keep your streak intact.",
@@ -9,7 +9,7 @@ export function getDailyChallenge({ dailyPactsToday, pp, streak, redState, isPre
   };
 }
 
-export function getPremiumBoostSummary({ isPremium, pp, streak, }: { isPremium: boolean; pp: number; streak: number; }) {
+export function getPremiumBoostSummary({ isPremium, pp: _pp, streak: _streak, }: { isPremium: boolean; pp: number; streak: number; }) {
   return {
     label: isPremium ? "PREMIUM BOOST ACTIVE" : "BASIC BOOST ACTIVE",
     body: isPremium ? "Access premium mission tools and voice support." : "Upgrade for faster progression and extra rewards.",

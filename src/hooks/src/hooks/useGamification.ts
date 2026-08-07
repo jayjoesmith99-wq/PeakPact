@@ -1,5 +1,5 @@
 // src/hooks/useGamification.ts
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export interface OperatorStats {
   level: number;

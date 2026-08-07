@@ -15,8 +15,6 @@ export type VerificationResult = {
   attribute_scale: string;
 };
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
-
 export const generatePayloadSignature = (userId: string, content: string, timestamp: string): string => {
   const value = `${userId}:${content}:${timestamp}:PEAKPACT_CYBER_SALT_2026`;
   let hash = 0;
@@ -345,8 +343,8 @@ export const shouldFallbackToLocalHeuristic = (result: Partial<VerificationResul
 
 export const submitToVerificationEngine = async (
   text: string,
-  userId: string = 'local-user',
-  deviceTimestamp: string = new Date().toISOString(),
+  _userId: string = 'local-user',
+  _deviceTimestamp: string = new Date().toISOString(),
   contract?: PactContract,
 ): Promise<VerificationResult> => {
   return buildStructuredVerification(text, contract);

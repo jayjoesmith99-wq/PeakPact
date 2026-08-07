@@ -8,7 +8,7 @@ export type MissionBriefing = {
   recommendedStake: number;
 };
 
-export function generateMissionBriefing(context: Record<string, unknown>, language: string): MissionBriefing {
+export function generateMissionBriefing(_context: Record<string, unknown>, _language: string): MissionBriefing {
   return {
     title: "OPERATIONAL BRIEFING",
     description: "Maintain discipline and execute the current task with precision.",
@@ -20,7 +20,7 @@ export function generateMissionBriefing(context: Record<string, unknown>, langua
   };
 }
 
-export function getConsequencePacket(reason: string, context: Record<string, unknown>, language: string) {
+export function getConsequencePacket(reason: string, _context: Record<string, unknown>, _language: string) {
   return {
     terminalLine: `> CONSEQUENCE: ${reason}`,
     overseerLine: `> OVERSEER NOTICE: ${reason}`,
@@ -28,7 +28,7 @@ export function getConsequencePacket(reason: string, context: Record<string, unk
   };
 }
 
-export function getDailyLoopGuide(language: string) {
+export function getDailyLoopGuide(_language: string) {
   return {
     title: "DAILY LOOP",
     body: "Stay consistent with your core discipline and avoid gaps in routine.",
@@ -41,7 +41,7 @@ export function getDailyLoopGuide(language: string) {
   };
 }
 
-export function getDisciplineBanner(context: Record<string, unknown>, language: string) {
+export function getDisciplineBanner(_context: Record<string, unknown>, _language: string) {
   return "DISCIPLINE STATUS STABLE.";
 }
 
@@ -131,7 +131,7 @@ export function getFirstSessionGuide(language: string) {
   };
 }
 
-export function getHeroSummary(context: Record<string, unknown>, missionTitle: string, missionRisk: string, language: string) {
+export function getHeroSummary(_context: Record<string, unknown>, missionTitle: string, _missionRisk: string, _language: string) {
   return {
     title: "SYSTEM PILOT READY",
     subtitle: `Mission: ${missionTitle}`,
@@ -140,7 +140,7 @@ export function getHeroSummary(context: Record<string, unknown>, missionTitle: s
   };
 }
 
-export function getHowToUseSystemSteps(language: string) {
+export function getHowToUseSystemSteps(_language: string) {
   return [
     { title: "WRITE YOUR PACT", body: "Describe what you accomplished." },
     { title: "SUBMIT PROOF", body: "Send the pact for verification." },
@@ -148,7 +148,7 @@ export function getHowToUseSystemSteps(language: string) {
   ];
 }
 
-export function getMissionGuidance(context: Record<string, unknown>, language: string) {
+export function getMissionGuidance(_context: Record<string, unknown>, _language: string) {
   return {
     title: "MISSION GUIDANCE",
     body: "Keep your goal clear and your pact concise.",
@@ -156,14 +156,14 @@ export function getMissionGuidance(context: Record<string, unknown>, language: s
   };
 }
 
-export function getOperatorInsight(context: Record<string, unknown>, language: string) {
+export function getOperatorInsight(_context: Record<string, unknown>, _language: string) {
   return {
     title: "OPERATOR INSIGHT",
     body: "Your consistency is your strongest asset.",
   };
 }
 
-export function getOperatorManualEntries(language: string) {
+export function getOperatorManualEntries(_language: string) {
   return [
     { title: "Pact Formation", body: "Write clear commitments to earn PP." },
     { title: "Recovery", body: "Use stabilization when needed." },
@@ -193,7 +193,7 @@ function getXpThresholdForLevel(level: number) {
   return 500 * (level - 1) * level / 2;
 }
 
-export function getProgressionSnapshot(context: Record<string, unknown>, language: string) {
+export function getProgressionSnapshot(context: Record<string, unknown>, _language: string) {
   const xp = typeof context.xp === 'number' ? context.xp : 0;
   const level = typeof context.level === 'number' ? context.level : getLevelFromXP(xp);
   const activeLevel = Math.min(Math.max(level, 1), 99);
@@ -230,10 +230,10 @@ export function getProgressionSnapshot(context: Record<string, unknown>, languag
   };
 }
 
-export function getStatusEffectTags(context: Record<string, unknown>, language: string) {
+export function getStatusEffectTags(_context: Record<string, unknown>, _language: string) {
   return [{ label: "STABLE" }];
 }
 
-export function getTerminalGlitchEvent(context: Record<string, unknown>, language: string) {
+export function getTerminalGlitchEvent(_context: Record<string, unknown>, _language: string) {
   return { title: "MINOR GLITCH" };
 }

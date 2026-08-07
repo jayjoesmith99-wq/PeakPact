@@ -1,5 +1,3 @@
-import { type AccessMode } from "./accessGate";
-
 export function extractOperatorCodename(user: { email?: string } | null, fallback?: string) {
   if (user?.email) {
     return user.email.split("@")[0].toUpperCase();
@@ -11,7 +9,7 @@ export function isLiveAuthEnabled(): boolean {
   return false;
 }
 
-export function isPeakPactEliteOverride(email: string | null, userId: string | null): boolean {
+export function isPeakPactEliteOverride(_email: string | null, _userId: string | null): boolean {
   return false;
 }
 
@@ -26,7 +24,7 @@ export type AuthResult = {
   requiresEmailConfirmation?: boolean;
 };
 
-export async function signInOperator({ email, password }: { email: string; password: string }): Promise<AuthResult> {
+export async function signInOperator({ email, password: _password }: { email: string; password: string }): Promise<AuthResult> {
   return {
     ok: true,
     message: "ACCESS GRANTED",
@@ -37,8 +35,8 @@ export async function signInOperator({ email, password }: { email: string; passw
 
 export async function signUpOperator({
   email,
-  password,
-  codename,
+  password: _password,
+  codename: _codename,
 }: {
   email: string;
   password: string;
@@ -57,7 +55,7 @@ export async function signOutOperator(): Promise<{ ok: boolean; message: string 
 }
 
 export function subscribeToAuthState(
-  callback: (event: unknown, session: { user?: { email?: string; id?: string } } | null) => void,
+  _callback: (event: unknown, session: { user?: { email?: string; id?: string } } | null) => void,
 ) {
   return {
     unsubscribe: () => {},

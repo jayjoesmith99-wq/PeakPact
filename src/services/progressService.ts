@@ -6,17 +6,12 @@ export function canAccessFounderPrivileges({ level, pp }: { level: number; pp: n
   return level >= 50 || pp >= 10000;
 }
 
-export async function createClientPayloadSignature(userId: string, text: string, timestamp?: string) {
+export async function createClientPayloadSignature(userId: string, _text: string, _timestamp?: string) {
   return `sig-${userId}-${Math.round(Date.now() / 1000)}`;
 }
 
 const MAX_LEVEL = 99;
 const LEVEL_CAP_XP = 50000;
-
-function getXpThresholdForLevel(level: number) {
-  if (level <= 1) return 0;
-  return 500 * (level - 1) * level / 2;
-}
 
 export function getLevelFromXP(xp: number) {
   if (xp >= LEVEL_CAP_XP) {
@@ -56,10 +51,10 @@ export async function loadUserProfile(): Promise<
   return null;
 }
 
-export async function saveUserProfile(profile: Record<string, unknown>) {
+export async function saveUserProfile(_profile: Record<string, unknown>) {
   return;
 }
 
-export async function syncProgressToSupabase(progress: Record<string, unknown>, records: Record<string, unknown>[]) {
+export async function syncProgressToSupabase(_progress: Record<string, unknown>, _records: Record<string, unknown>[]) {
   return;
 }

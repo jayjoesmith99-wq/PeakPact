@@ -1,4 +1,4 @@
-export function getNarrativeProgress(level: number, language: string) {
+export function getNarrativeProgress(level: number, _language: string) {
   const total = 10;
   const unlocked = Math.min(total, Math.floor(level / 2));
   return {
@@ -12,7 +12,7 @@ export function getNarrativeProgress(level: number, language: string) {
   };
 }
 
-export function getNewlyUnlockedEpisodes(oldLevel: number, nextLevel: number, language: string) {
+export function getNewlyUnlockedEpisodes(oldLevel: number, nextLevel: number, _language: string) {
   if (nextLevel <= oldLevel) {
     return [];
   }

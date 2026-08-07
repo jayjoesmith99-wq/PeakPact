@@ -1,4 +1,4 @@
-export async function ensureDevicePremiumTrialStarted(storage: unknown): Promise<string | null> {
+export async function ensureDevicePremiumTrialStarted(_storage: unknown): Promise<string | null> {
   return new Date().toISOString();
 }
 

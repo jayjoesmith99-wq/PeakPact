@@ -1,5 +1,5 @@
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
-import RevenueCatUI from "react-native-purchases-ui";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
@@ -14,7 +14,6 @@ import {
   Animated,
   AppState as NativeAppState,
   ImageBackground,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -33,7 +32,6 @@ import AccessGate from "./src/components/AccessGate";
 import BootSequence from "./src/components/BootSequence";
 import BrandMark from "./src/components/BrandMark";
 import PactRing from "./src/components/PactRing";
-import MonetizationPanel from "./src/components/MonetizationPanel";
 import {
   buildStructuredVerification,
   submitToVerificationEngine,
@@ -58,7 +56,6 @@ import {
   isPeakPactEliteOverride,
   restoreOperatorSession,
   signInOperator,
-  signOutOperator,
   signUpOperator,
   subscribeToAuthState,
 } from "./src/services/authService";
@@ -74,12 +71,9 @@ import { getLaunchMetadata } from "./src/services/launchConfig";
 import { getLaunchCopyPack } from "./src/services/launchPack";
 import {
   getActiveProductPlan,
-  getFeatureLockMessage,
-  getPlanFeatures,
   resolveEffectiveProductPlan,
 } from "./src/services/productPlan";
 import {
-  appendPactHistory,
   canAccessFounderPrivileges,
   createClientPayloadSignature,
   getLevelFromXP,
@@ -90,38 +84,27 @@ import {
 } from "./src/services/progressService";
 import {
   createVoicePayload,
-  startVoiceRecording,
-  stopVoiceRecording,
-  transcribeAudio,
   uploadVoicePayload,
 } from "./src/services/voiceService";
 import { formatMissionCountdown } from "./src/services/missionTimer";
 import { evaluateDailySweep } from "./src/services/dailySweep";
 import {
-  applyRecoveryAction,
   applyStatusEffectToReward,
-  consumeStabilization,
-  DAILY_STABILIZATION_COST_PP,
-  DAILY_STABILIZATION_LIMIT,
   deriveProtocolArchetype,
   evaluateFocusLockViolation,
   getProtocolStatusEffect,
-  getStabilizationUsageState,
+  // getStabilizationUsageState,
 } from "./src/services/protocolSystem";
 import {
   generateMissionBriefing,
   getConsequencePacket,
   getDailyLoopGuide,
-  getDisciplineBanner,
   getFirstSessionGuide,
   getHeroSummary,
   getHowToUseSystemSteps,
-  getMissionGuidance,
-  getOperatorInsight,
-  getOperatorManualEntries,
   getProgressionSnapshot,
-  getStatusEffectTags,
   getTerminalGlitchEvent,
+  
 } from "./src/services/missionSystem";
 import {
   getLocalizedText,
@@ -146,11 +129,7 @@ import {
   sendSquadMessage,
   type Squad,
 } from "./src/services/squadSystem";
-import {
-  clearPersistedAppState,
-  loadPersistedAppState,
-  savePersistedAppState,
-} from "./src/services/appStateStorage";
+import { loadPersistedAppState, savePersistedAppState } from "./src/services/appStateStorage";
 import {
   getDailyChallenge,
   getPremiumBoostSummary,
@@ -775,9 +754,8 @@ export default function App() {
   const [screenJitter, setScreenJitter] = useState(false);
   const [pulsePhase, setPulsePhase] = useState(0);
   const [scanOffset, setScanOffset] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
   const [statusMessage, setStatusMessage] = useState("SYSTEM READY");
-  const [showMonetization, setShowMonetization] = useState(false);
+  const [, setShowMonetization] = useState(false);
   const [onboardingSeen, setOnboardingSeen] = useState(false);
   const [language, setLanguage] = useState<SupportedLanguage>("en");
   const translate = useCallback(
@@ -848,7 +826,7 @@ export default function App() {
     ],
     [translate],
   );
-  const [showOperatorManual, setShowOperatorManual] = useState(false);
+  
   const [hasHydratedPersistence, setHasHydratedPersistence] = useState(false);
   const [showComplianceScreen, setShowComplianceScreen] = useState(false);
   const [deviceTrialStartedAt, setDeviceTrialStartedAt] = useState<
@@ -918,36 +896,8 @@ export default function App() {
     [state.level, state.pp, eliteOverrideActive],
   );
   const captainPrivilegesActive = state.level >= 99;
-  const stabilizationUsage = useMemo(
-    () =>
-      getStabilizationUsageState({
-        usedToday: state.stabilizationUsesToday,
-        resetDate: state.stabilizationResetDate,
-        now: new Date(),
-      }),
-    [state.stabilizationUsesToday, state.stabilizationResetDate],
-  );
-  const stabilizationCost = eliteOverrideActive
-    ? 0
-    : DAILY_STABILIZATION_COST_PP;
-  const recoveryButtonLabel = useMemo(() => {
-    if (!state.redState) {
-      return "RECOVER";
-    }
-    if (!stabilizationUsage.canUse) {
-      return "RECOVERY LOCKED";
-    }
-    if (!eliteOverrideActive && state.pp < stabilizationCost) {
-      return "INSUFFICIENT PP";
-    }
-    return `RECOVER (${stabilizationCost === 0 ? "FREE" : `${stabilizationCost} PP`})`;
-  }, [
-    state.redState,
-    stabilizationUsage.canUse,
-    eliteOverrideActive,
-    state.pp,
-    stabilizationCost,
-  ]);
+  
+  
   const heroFloat = useRef(new Animated.Value(0)).current;
   const templatePulse = useRef(new Animated.Value(0)).current;
   const templateSweep = useRef(new Animated.Value(0)).current;
@@ -987,7 +937,7 @@ export default function App() {
     }),
     overflow: "hidden",
   }));
-  const [protocolArchetype, setProtocolArchetype] = useState(() =>
+  const [, setProtocolArchetype] = useState(() =>
     deriveProtocolArchetype({
       pp: createInitialState().pp,
       streak: createInitialState().streak,
@@ -1177,25 +1127,8 @@ export default function App() {
     [basePlan, deviceTrialStatus.active],
   );
   const effectivePlan = eliteOverrideActive ? "PREMIUM" : activePlan;
-  const planFeatures = useMemo(
-    () => getPlanFeatures(effectivePlan),
-    [effectivePlan],
-  );
-  const planStatusLabel = useMemo(() => {
-    if (eliteOverrideActive) {
-      return "PREMIUM // ELITE OVERRIDE";
-    }
-    if (basePlan !== "PREMIUM" && deviceTrialStatus.active) {
-      return `PREMIUM // DEVICE TRIAL (${deviceTrialStatus.remainingDays}D LEFT)`;
-    }
-    return effectivePlan;
-  }, [
-    effectivePlan,
-    basePlan,
-    deviceTrialStatus.active,
-    deviceTrialStatus.remainingDays,
-    eliteOverrideActive,
-  ]);
+  
+  
 
   useEffect(() => {
     if (!state.levelFlash) {
@@ -1706,7 +1639,7 @@ export default function App() {
     state.extensionsUsed,
   ]);
 
-  const queueCount = useMemo(() => state.queue.length, [state.queue.length]);
+  
 
   const appendLine = (line: string) => {
     setState((prev) => ({
@@ -1806,22 +1739,7 @@ export default function App() {
     }
   };
 
-  const lockTerminal = async () => {
-    if (!isLiveAuthEnabled()) {
-      await AsyncStorage.removeItem(LOCAL_ACCESS_SESSION_KEY);
-      setAccessGranted(false);
-      setAccessMode("SIGN_IN");
-      setAccessError(null);
-      setStatusMessage("TERMINAL LOCKED");
-      return;
-    }
-
-    const result = await signOutOperator();
-    setAccessGranted(false);
-    setAccessMode("SIGN_IN");
-    setAccessError(result.ok ? null : result.message);
-    setStatusMessage(result.message);
-  };
+  
 
   const launchPactExecution = useCallback(() => {
     if (!hasRequiredComplianceConsent(complianceConsent)) {
@@ -2079,148 +1997,11 @@ export default function App() {
     }
   };
 
-  const syncQueue = async () => {
-    if (state.queue.length === 0) {
-      appendLine("> SYNC QUEUE EMPTY.");
-      return;
-    }
+  
 
-    const totalPp = state.queue.reduce((sum, item) => sum + item.pp, 0);
-    const nextXp = state.xp + totalPp * 100;
-    const nextLevel = getLevelFromXP(nextXp);
-    const newlyUnlockedEpisodes = getNewlyUnlockedEpisodes(
-      state.level,
-      nextLevel,
-      language,
-    );
+  
 
-    setState((prev) => ({
-      ...prev,
-      pp: prev.pp + totalPp,
-      level: nextLevel,
-      xp: nextXp,
-      streak: prev.streak + prev.queue.length,
-      queue: [],
-      status: "ACTIVE" as PactStatus,
-      redState: false,
-      terminalLines: [
-        ...prev.terminalLines,
-        `> SYNC COMPLETE. +${totalPp} PP across ${prev.queue.length} entries.`,
-        ...newlyUnlockedEpisodes.map(
-          (episode) => `> NARRATIVE UNLOCKED: ${episode.title}`,
-        ),
-      ].slice(-14),
-      overseerLines: [
-        ...prev.overseerLines,
-        "> CAPTAINS: QUEUE CLEARED. HOSTILE MODE RELEASED.",
-        ...newlyUnlockedEpisodes.map(
-          (episode) =>
-            `> CAPTAINS: TRANSMISSION ${episode.episodeNumber} UNSEALED.`,
-        ),
-      ].slice(-8),
-    }));
-
-    await syncProgressToSupabase(
-      {
-        user_id: activeUserId ?? "local-user",
-        level: nextLevel,
-        pp: state.pp + totalPp,
-        streak: state.streak + state.queue.length,
-        red_state: false,
-        last_pact_date: state.lastPactDate,
-        active_pact_deadline: state.activePactDeadline,
-        extensions_used: state.extensionsUsed,
-        updated_at: new Date().toISOString(),
-      },
-      state.queue.map((item) => ({
-        user_id: activeUserId ?? "local-user",
-        content: item.text,
-        result: item.result,
-        pp_awarded: item.pp,
-        created_at: new Date().toISOString(),
-        synced: true,
-        device_timestamp: item.deviceTimestamp,
-        signature: item.signature,
-        active_pact_deadline:
-          item.activePactDeadline || state.activePactDeadline,
-        extensions_used: item.extensionsUsed ?? state.extensionsUsed,
-      })),
-    );
-    setStatusMessage("QUEUE SYNCED");
-  };
-
-  const toggleRecording = async () => {
-    if (!planFeatures.voiceCapture) {
-      appendLine("> PREMIUM LOCK: VOICE CAPTURE UNAVAILABLE ON BASIC.");
-      setStatusMessage(getFeatureLockMessage("voiceCapture"));
-      return;
-    }
-
-    if (!hasRequiredComplianceConsent(complianceConsent)) {
-      appendLine(buildComplianceNotice(complianceConsent));
-      setStatusMessage("CONSENT REQUIRED");
-      return;
-    }
-
-    if (isRecording) {
-      const uri = await stopVoiceRecording();
-      setIsRecording(false);
-      if (uri) {
-        const transcript = await transcribeAudio(uri);
-        setDraft((current) =>
-          current ? `${current}\n${transcript}` : transcript,
-        );
-        appendLine(
-          "> VOICE TRANSCRIPT CAPTURED. REVIEW AND SUBMIT WITH CONTRACT.",
-        );
-        setStatusMessage("VOICE TRANSCRIBED");
-      } else {
-        setStatusMessage("RECORDING STOPPED");
-      }
-      return;
-    }
-
-    try {
-      await startVoiceRecording();
-      setIsRecording(true);
-      setStatusMessage("LISTENING...");
-    } catch (error) {
-      setStatusMessage("MICROPHONE UNAVAILABLE");
-    }
-  };
-
-  const toggleOffline = () => {
-    setState((prev) => ({
-      ...prev,
-      offline: !prev.offline,
-      status: prev.offline ? "ACTIVE" : "SYNCING",
-      terminalLines: [
-        ...prev.terminalLines,
-        prev.offline
-          ? "> OFFLINE MODE DISENGAGED."
-          : "> OFFLINE MODE ENGAGED. LOGS WILL QUEUE.",
-      ].slice(-14),
-      overseerLines: [
-        ...prev.overseerLines,
-        prev.offline
-          ? "> CAPTAINS: LOCAL AUTONOMY DISABLED."
-          : "> CAPTAINS: LOCAL AUTONOMY ENABLED.",
-      ].slice(-8),
-    }));
-  };
-
-  const toggleMonetization = async () => {
-    try {
-      await RevenueCatUI.presentPaywall();
-    } catch (error) {
-      console.error("Paywall Error:", error);
-      setShowMonetization((previous) => !previous);
-    }
-  };
-
-  const toggleOperatorManual = () => {
-    setShowOperatorManual((previous) => !previous);
-  };
+  
 
   const toggleComplianceScreen = () => {
     setShowComplianceScreen((previous) => !previous);
@@ -2238,118 +2019,9 @@ export default function App() {
     });
   };
 
-  const overclockMission = () => {
-    if (!planFeatures.timeDilation) {
-      appendLine("> PREMIUM LOCK: TIME DILATION UNAVAILABLE ON BASIC.");
-      setStatusMessage(getFeatureLockMessage("timeDilation"));
-      return;
-    }
+  
 
-    if (!eliteOverrideActive && state.pp < 15) {
-      appendLine("> INSUFFICIENT PP FOR TIME DILATION.");
-      return;
-    }
-
-    setState((prev) => {
-      const nextDeadline = new Date(
-        Date.parse(prev.activePactDeadline) + 3600000,
-      ).toISOString();
-      const consequence = getConsequencePacket(
-        "OVERCLOCKED",
-        {
-          pp: prev.pp,
-          streak: prev.streak,
-          redState: prev.redState,
-          overclockCount: prev.extensionsUsed,
-          protocolArchetypeName: prev.protocolArchetypeName,
-          protocolStatusEffect: prev.protocolStatusEffect,
-        },
-        language,
-      );
-      setMissionCountdown(formatMissionCountdown(nextDeadline));
-      return {
-        ...prev,
-        pp: eliteOverrideActive ? prev.pp : prev.pp - 15,
-        activePactDeadline: nextDeadline,
-        extensionsUsed: prev.extensionsUsed + 1,
-        terminalLines: [
-          ...prev.terminalLines,
-          consequence.terminalLine,
-          "> WINDOW EXTENDED BY +1:00:00.",
-          "> COST: -15 PP.",
-        ].slice(-14),
-        overseerLines: [...prev.overseerLines, consequence.overseerLine].slice(
-          -8,
-        ),
-      };
-    });
-    setStatusMessage("OVERCLOCKED");
-  };
-
-  const stabilizeRedFlash = () => {
-    if (!state.redState) {
-      appendLine("> RECOVERY PROTOCOL NOT REQUIRED.");
-      setStatusMessage("NO REDSTATE");
-      return;
-    }
-
-    const currentState = getStabilizationUsageState({
-      usedToday: state.stabilizationUsesToday,
-      resetDate: state.stabilizationResetDate,
-      now: new Date(),
-    });
-
-    if (!currentState.canUse) {
-      appendLine("> RECOVERY WINDOW LOCKED. DAILY RESET AT 00:00.");
-      setStatusMessage("RECOVERY LOCKED");
-      return;
-    }
-
-    if (!eliteOverrideActive && state.pp < stabilizationCost) {
-      appendLine("> INSUFFICIENT PP FOR RECOVERY.");
-      setStatusMessage("INSUFFICIENT PP");
-      return;
-    }
-
-    const recoveryOutcome = applyRecoveryAction({
-      pp: state.pp,
-      redState: state.redState,
-      stabilizationUsesToday: state.stabilizationUsesToday,
-      resetDate: state.stabilizationResetDate,
-      now: new Date(),
-      costPP: stabilizationCost,
-    });
-
-    if (!recoveryOutcome.applied) {
-      appendLine("> RECOVERY FAILED. CHECK AVAILABLE PP AND DAILY WINDOW.");
-      setStatusMessage("RECOVERY FAILED");
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      pp: eliteOverrideActive ? prev.pp : recoveryOutcome.nextPP,
-      stabilizationUsesToday: recoveryOutcome.nextStabilizationUsesToday,
-      stabilizationResetDate: recoveryOutcome.resetDate,
-      flashSuppressed: recoveryOutcome.nextFlashSuppressed,
-      redState: recoveryOutcome.nextRedState,
-      levelFlash: false,
-      terminalLines: [
-        ...prev.terminalLines,
-        `> COMMAND: RECOVER // COST ${stabilizationCost} PP // REMAINING ${recoveryOutcome.remaining}`,
-      ].slice(-14),
-      overseerLines: [
-        ...prev.overseerLines,
-        "> CAPTAINS: RECOVERY PROTOCOL ENGAGED. REDLINE TEMPORARILY STABLE.",
-      ].slice(-8),
-    }));
-    setScreenJitter(false);
-    setPulsePhase(0);
-    appendLine(
-      `> RECOVERY COMPLETE. ${recoveryOutcome.remaining} RECOVERY WINDOWS REMAINING TODAY.`,
-    );
-    setStatusMessage("RECOVERY COMPLETE");
-  };
+  
 
   const changeLanguage = async (nextLanguage: SupportedLanguage) => {
     setLanguage(nextLanguage);
@@ -2590,82 +2262,14 @@ export default function App() {
     }));
   };
 
-  const loadMissionIntoContract = () => {
-    if (!planFeatures.missionAutoload) {
-      appendLine("> PREMIUM LOCK: MISSION AUTOLOAD UNAVAILABLE ON BASIC.");
-      setStatusMessage(getFeatureLockMessage("missionAutoload"));
-      return;
-    }
-
-    setContractTask(state.missionContractTemplate);
-    setContractDuration(String(state.missionTimeWindowMinutes));
-    setContractStake(String(state.missionRecommendedStake));
-    appendLine("> MISSION CONTRACT LOADED INTO PACT FRAME.");
-    setStatusMessage("MISSION CONTRACT LOADED");
-  };
-
-  const loadSampleDraft = () => {
-    const taskSummary = contractTask.trim() || state.missionContractTemplate;
-    const durationSummary =
-      contractDuration.trim() || String(state.missionTimeWindowMinutes);
-    const stakeSummary =
-      contractStake.trim() || String(state.missionRecommendedStake);
-    const sample = `I completed ${taskSummary.toLowerCase()} in ${durationSummary} minutes with ${stakeSummary} PP at stake and measurable progress.`;
-    setDraft(sample);
-    appendLine("> SAMPLE DRAFT LOADED INTO THE PACT TERMINAL.");
-    setStatusMessage("SAMPLE DRAFT LOADED");
-  };
+  
 
   const narrativeProgress = useMemo(
     () => getNarrativeProgress(state.level, language),
     [state.level, language],
   );
-  const statusEffectTags = useMemo(
-    () =>
-      getStatusEffectTags(
-        {
-          pp: state.pp,
-          streak: state.streak,
-          redState: state.redState,
-          overclockCount: state.extensionsUsed,
-          protocolArchetypeName: state.protocolArchetypeName,
-          protocolStatusEffect: state.protocolStatusEffect,
-        },
-        language,
-      ),
-    [
-      state.pp,
-      state.streak,
-      state.redState,
-      state.extensionsUsed,
-      state.protocolArchetypeName,
-      state.protocolStatusEffect,
-      language,
-    ],
-  );
-  const missionGuidance = useMemo(
-    () =>
-      getMissionGuidance(
-        {
-          pp: state.pp,
-          streak: state.streak,
-          redState: state.redState,
-          overclockCount: state.extensionsUsed,
-          protocolArchetypeName: state.protocolArchetypeName,
-          protocolStatusEffect: state.protocolStatusEffect,
-        },
-        language,
-      ),
-    [
-      state.pp,
-      state.streak,
-      state.redState,
-      state.extensionsUsed,
-      state.protocolArchetypeName,
-      state.protocolStatusEffect,
-      language,
-    ],
-  );
+  
+  
   const launchMetadata = useMemo(() => getLaunchMetadata(), []);
   const launchCopyPack = useMemo(() => getLaunchCopyPack(), []);
   const heroSummary = useMemo(
@@ -2731,33 +2335,7 @@ export default function App() {
     () => getHowToUseSystemSteps(language),
     [language],
   );
-  const operatorInsight = useMemo(
-    () =>
-      getOperatorInsight(
-        {
-          pp: state.pp,
-          streak: state.streak,
-          redState: state.redState,
-          overclockCount: state.extensionsUsed,
-          protocolArchetypeName: state.protocolArchetypeName,
-          protocolStatusEffect: state.protocolStatusEffect,
-        },
-        language,
-      ),
-    [
-      state.pp,
-      state.streak,
-      state.redState,
-      state.extensionsUsed,
-      state.protocolArchetypeName,
-      state.protocolStatusEffect,
-      language,
-    ],
-  );
-  const operatorManualEntries = useMemo(
-    () => getOperatorManualEntries(language),
-    [language],
-  );
+  
 
   const pulseColors =
     state.redState && !state.flashSuppressed
@@ -3106,29 +2684,7 @@ export default function App() {
         ? CRIMSON
         : pulseColors[pulsePhase]
       : activeDesignTemplate.background;
-  const disciplineBanner = useMemo(
-    () =>
-      getDisciplineBanner(
-        {
-          pp: state.pp,
-          streak: state.streak,
-          redState: state.redState,
-          overclockCount: state.extensionsUsed,
-          protocolArchetypeName: state.protocolArchetypeName,
-          protocolStatusEffect: state.protocolStatusEffect,
-        },
-        language,
-      ),
-    [
-      state.pp,
-      state.streak,
-      state.redState,
-      state.extensionsUsed,
-      state.protocolArchetypeName,
-      state.protocolStatusEffect,
-      language,
-    ],
-  );
+  
 
   const handleTemplatePurchase = (templateId: DesignTemplateId) => {
     const result = purchaseDesignTemplate({

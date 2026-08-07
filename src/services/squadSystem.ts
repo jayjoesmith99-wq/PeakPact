@@ -97,7 +97,7 @@ export function joinSquad(
   squads: Squad[],
   code: string,
   memberName: string,
-  plan: string,
+  _plan: string,
 ) {
   const squad = squads.find((entry) => entry.code.toUpperCase() === code.toUpperCase());
   if (!squad) {
@@ -129,7 +129,7 @@ export function sendSquadMessage(
   squadId: string,
   author: string,
   text: string,
-  language: string,
+  _language: string,
 ) {
   const squad = squads.find((entry) => entry.id === squadId);
   if (!squad) {
@@ -145,7 +145,7 @@ export function assignCaptainTask(
   operatorCodename: string,
   targetName: string,
   taskText: string,
-  language: string,
+  _language: string,
 ) {
   const squad = squads.find((entry) => entry.id === squadId);
   if (!squad) {
