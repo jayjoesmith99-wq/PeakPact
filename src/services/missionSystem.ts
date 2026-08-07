@@ -46,15 +46,88 @@ export function getDisciplineBanner(context: Record<string, unknown>, language: 
 }
 
 export function getFirstSessionGuide(language: string) {
+  const normalized = language?.toLowerCase();
+  if (normalized?.startsWith('es')) {
+    return {
+      title: 'GUÍA DE LA PRIMERA SESIÓN',
+      body: 'Bienvenido, operador. Empieza con una pequeña victoria y aprende el ciclo en tres pasos rápidos.',
+      steps: [
+        { title: 'Elige una tarea', body: 'Elige algo que puedas terminar hoy.' },
+        { title: 'Envíala', body: 'Envía tu pacto para revisión y gana progreso.' },
+        { title: 'Revisa el resultado', body: 'Mira tu recompensa, estado y próximo movimiento.' },
+      ],
+      primaryAction: 'EMPIEZA TU PRIMERA TAREA',
+    };
+  }
+  if (normalized?.startsWith('fr')) {
+    return {
+      title: 'GUIDE DE LA PREMIÈRE SESSION',
+      body: 'Bienvenue, opérateur. Commence par une petite victoire et apprends la boucle en trois étapes rapides.',
+      steps: [
+        { title: 'Choisis une tâche', body: 'Choisis une chose que tu peux terminer aujourd’hui.' },
+        { title: 'Soumets-la', body: 'Envoie ton pacte pour vérification et gagne en progression.' },
+        { title: 'Consulte le résultat', body: 'Vois ta récompense, ton statut et la prochaine étape.' },
+      ],
+      primaryAction: 'COMMENCE TA PREMIÈRE TÂCHE',
+    };
+  }
+  if (normalized?.startsWith('de')) {
+    return {
+      title: 'ANLEITUNG ZUR ERSTEN SITZUNG',
+      body: 'Willkommen, Operator. Starte mit einem kleinen Sieg und lerne die Schleife in drei schnellen Schritten.',
+      steps: [
+        { title: 'Wähle eine Aufgabe', body: 'Wähle etwas, das du heute abschließen kannst.' },
+        { title: 'Sende sie', body: 'Sende deinen Pakt zur Prüfung und verdiene Fortschritt.' },
+        { title: 'Prüfe das Ergebnis', body: 'Sieh dir Belohnung, Status und nächsten Schritt an.' },
+      ],
+      primaryAction: 'STARTE DEINE ERSTE AUFGABE',
+    };
+  }
+  if (normalized?.startsWith('pt')) {
+    return {
+      title: 'GUIA DA PRIMEIRA SESSÃO',
+      body: 'Bem-vindo, operador. Comece com uma pequena vitória e aprenda o ciclo em três etapas rápidas.',
+      steps: [
+        { title: 'Escolha uma tarefa', body: 'Escolha algo que você consiga concluir hoje.' },
+        { title: 'Envie-a', body: 'Envie seu pacto para revisão e ganhe progresso.' },
+        { title: 'Revise o resultado', body: 'Veja sua recompensa, status e próximo passo.' },
+      ],
+      primaryAction: 'COMECE SUA PRIMEIRA TAREFA',
+    };
+  }
+  if (normalized?.startsWith('ja')) {
+    return {
+      title: '最初のセッションガイド',
+      body: 'ようこそ、オペレーター。小さな勝利から始めて、3つのステップでループを覚えましょう。',
+      steps: [
+        { title: 'タスクを選ぶ', body: '今日終えられるものを1つ選びます。' },
+        { title: '送信する', body: '契約をレビューに送って進捗を得ます。' },
+        { title: '結果を確認する', body: '報酬、ステータス、次の一手を確認します。' },
+      ],
+      primaryAction: '最初のタスクを開始',
+    };
+  }
+  if (normalized?.startsWith('zh')) {
+    return {
+      title: '首次会话指南',
+      body: '欢迎，操作员。先从一个小胜利开始，并用三个快速步骤掌握循环。',
+      steps: [
+        { title: '选择任务', body: '选择一件你今天可以完成的事。' },
+        { title: '提交任务', body: '将你的契约提交审核并获得进度。' },
+        { title: '查看结果', body: '查看你的奖励、状态和下一步。' },
+      ],
+      primaryAction: '开始你的第一项任务',
+    };
+  }
   return {
-    title: "FIRST SESSION GUIDE",
-    body: "Welcome operator. Start with one small win and learn the loop in three quick steps.",
+    title: 'FIRST SESSION GUIDE',
+    body: 'Welcome operator. Start with one small win and learn the loop in three quick steps.',
     steps: [
-      { title: "Pick a task", body: "Choose one thing you can finish today." },
-      { title: "Submit it", body: "Send your pact for review and earn progress." },
-      { title: "Review the result", body: "See your reward, status, and next move." },
+      { title: 'Pick a task', body: 'Choose one thing you can finish today.' },
+      { title: 'Submit it', body: 'Send your pact for review and earn progress.' },
+      { title: 'Review the result', body: 'See your reward, status, and next move.' },
     ],
-    primaryAction: "START YOUR FIRST TASK",
+    primaryAction: 'START YOUR FIRST TASK',
   };
 }
 

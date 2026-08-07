@@ -131,7 +131,7 @@ import {
   type SupportedLanguage,
 } from "./src/services/i18n";
 import { initializeI18n } from "./src/i18n";
-import { TUTORIAL_STEPS } from "./src/services/tutorialService";
+import { getTutorialSteps } from "./src/services/tutorialService";
 import {
   getRecoveryVisualState,
   isRedFlashActive,
@@ -488,30 +488,34 @@ function TutorialOverlay({
   onNext,
   onPrev,
   onSkip,
+  steps,
+  language,
 }: {
   step: number;
   accent: string;
   onNext: () => void;
   onPrev: () => void;
   onSkip: () => void;
+  steps: Array<{ title: string; body: string; hint: string; tab: string }>;
+  language: string;
 }) {
-  const current = TUTORIAL_STEPS[step];
+  const current = steps[step];
   if (!current) return null;
   return (
     <View style={_tutSS.overlay}>
       <View style={[_tutSS.card, { borderColor: accent }]}>
         <View style={_tutSS.topRow}>
           <Text style={_tutSS.stepCt}>
-            STEP {step + 1} / {TUTORIAL_STEPS.length}
+            {getLocalizedText("tutorialStepLabel", language)} {step + 1} / {steps.length}
           </Text>
           <Pressable onPress={onSkip}>
             <Text style={[_tutSS.skip, { color: `${accent}99` }]}>
-              SKIP TUTORIAL
+              {getLocalizedText("tutorialSkipLabel", language)}
             </Text>
           </Pressable>
         </View>
         <View style={_tutSS.progRow}>
-          {TUTORIAL_STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <View
               key={i}
               style={[
@@ -539,7 +543,7 @@ function TutorialOverlay({
             onPress={step > 0 ? onPrev : undefined}
           >
             {step > 0 ? (
-              <Text style={[_tutSS.btnBkTxt, { color: accent }]}>← BACK</Text>
+              <Text style={[_tutSS.btnBkTxt, { color: accent }]}>{getLocalizedText("tutorialBackLabel", language)}</Text>
             ) : null}
           </Pressable>
           <Pressable
@@ -547,7 +551,7 @@ function TutorialOverlay({
             onPress={onNext}
           >
             <Text style={_tutSS.btnNxTxt}>
-              {step === TUTORIAL_STEPS.length - 1 ? "ENTER SYSTEM →" : "NEXT →"}
+              {step === steps.length - 1 ? getLocalizedText("tutorialCompleteLabel", language) : getLocalizedText("tutorialNextLabel", language)}
             </Text>
           </Pressable>
         </View>
@@ -899,6 +903,7 @@ export default function App() {
   const [executionCountdown, setExecutionCountdown] = useState(5);
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [tutorialCompleted, setTutorialCompleted] = useState(false);
+  const tutorialSteps = useMemo(() => getTutorialSteps(language), [language]);
   const mainScrollRef = useRef<ScrollView>(null);
   const [leaveSquadCountdown, setLeaveSquadCountdown] = useState(0);
   const leaveSquadPulse = useRef(new Animated.Value(1)).current;
@@ -2391,12 +2396,12 @@ export default function App() {
   const handleTutorialNext = useCallback(() => {
     if (tutorialStep === null) return;
     const next = tutorialStep + 1;
-    if (next >= TUTORIAL_STEPS.length) {
+    if (next >= tutorialSteps.length) {
       setTutorialStep(null);
       setTutorialCompleted(true);
       void AsyncStorage.setItem("@peakpact/tutorial-done", "true");
     } else {
-      const nextTab = TUTORIAL_STEPS[next]?.tab as AppTab | undefined;
+      const nextTab = tutorialSteps[next]?.tab as AppTab | undefined;
       setTutorialStep(next);
       if (nextTab) handleTabPress(nextTab);
     }
@@ -2405,7 +2410,7 @@ export default function App() {
   const handleTutorialPrev = useCallback(() => {
     if (!tutorialStep) return;
     const prev = tutorialStep - 1;
-    const prevTab = TUTORIAL_STEPS[prev]?.tab as AppTab | undefined;
+    const prevTab = tutorialSteps[prev]?.tab as AppTab | undefined;
     setTutorialStep(prev);
     if (prevTab) handleTabPress(prevTab);
   }, [tutorialStep, handleTabPress]);
@@ -3228,7 +3233,7 @@ export default function App() {
       {!onboardingSeen ? (
         <View style={styles.onboardingOverlay}>
           <View style={styles.onboardingCard}>
-            <Text style={styles.onboardingLabel}>[ WELCOME OPERATOR ]</Text>
+            <Text style={styles.onboardingLabel}>{getLocalizedText("onboardingWelcomeLabel", language)}</Text>
             <Text style={styles.onboardingTitle}>
               {firstSessionGuide.title}
             </Text>
@@ -3242,7 +3247,7 @@ export default function App() {
             </View>
             <View style={[styles.onboardingActionRow, { borderColor: accent }]}>
               <Text style={[styles.onboardingActionLabel, { color: accent }]}>
-                YOUR FIRST STEP
+                {getLocalizedText("onboardingFirstStepLabel", language)}
               </Text>
               <Text style={styles.onboardingActionValue}>
                 {firstSessionGuide.primaryAction}
@@ -3321,7 +3326,7 @@ export default function App() {
                 <Text style={[styles.webLedgerPP, { color: accent }]}>
                   {displayPp}
                 </Text>
-                <Text style={styles.webLedgerPPLabel}>PP BALANCE</Text>
+                <Text style={styles.webLedgerPPLabel}>{translate("ledgerBalanceLabel")}</Text>
                 <View style={styles.webLedgerSpacer} />
                 <Text style={[styles.webLedgerDetail, { color: accent }]}>
                   MEDIATOR: {operatorCodename}
@@ -3351,7 +3356,7 @@ export default function App() {
                 </Text>
               </View>
               <View style={[styles.bentoWindow, { borderColor: accent }]}>
-                <Text style={styles.bentoWindowTitle}>LOGS</Text>
+                <Text style={styles.bentoWindowTitle}>{translate("logsTitle")}</Text>
                 {state.terminalLines.slice(-6).map((line, i) => (
                   <Text key={i} style={[styles.logLine, { color: accent }]}>
                     {line}
@@ -3359,12 +3364,12 @@ export default function App() {
                 ))}
                 {state.terminalLines.length === 0 && (
                   <Text style={styles.bentoDetailMini}>
-                    AWAITING PACT ACTIVITY...
+                    {translate("noLogsMessage")}
                   </Text>
                 )}
               </View>
               <View style={[styles.bentoWindow, { borderColor: accent }]}>
-                <Text style={styles.bentoWindowTitle}>SEARCH RESULTS</Text>
+                <Text style={styles.bentoWindowTitle}>{translate("searchResultsTitle")}</Text>
                 <View style={styles.webSearchHeader}>
                   <Text style={[styles.webSearchCol, { flex: 2 }]}>
                     ORDERHANDLE
@@ -3390,12 +3395,12 @@ export default function App() {
                 ))}
                 {state.queue.length === 0 && (
                   <Text style={styles.bentoDetailMini}>
-                    NO PACT HISTORY YET
+                    {translate("noHistoryMessage")}
                   </Text>
                 )}
               </View>
               <View style={[styles.bentoWindow, { borderColor: accent }]}>
-                <Text style={styles.bentoWindowTitle}>SYSTEM GALLERY</Text>
+                <Text style={styles.bentoWindowTitle}>{translate("systemGalleryTitle")}</Text>
                 {designTemplates.map((template) => {
                   const ownedTpl = ownedDesignTemplates.includes(template.id);
                   const selectedTpl = selectedDesignTemplateId === template.id;
@@ -3538,7 +3543,7 @@ export default function App() {
                 <View
                   style={[styles.operatorLedgerPane, { borderColor: accent }]}
                 >
-                  <Text style={styles.bentoWindowTitle}>OPERATOR LEDGER</Text>
+                  <Text style={styles.bentoWindowTitle}>{translate("ledgerTitle")}</Text>
                   <Text style={[styles.bentoOperatorId, { color: accent }]}>
                     MEDIATOR: {operatorCodename}
                   </Text>
@@ -3563,7 +3568,7 @@ export default function App() {
                     { borderColor: state.redState ? PEAK_CRIMSON : accent },
                   ]}
                 >
-                  <Text style={styles.bentoWindowTitle}>SEVERANCE TIMER</Text>
+                  <Text style={styles.bentoWindowTitle}>{translate("severanceTimerTitle")}</Text>
                   <Text
                     style={[
                       styles.bentoCountdown,
@@ -3573,7 +3578,7 @@ export default function App() {
                     {missionCountdown}
                   </Text>
                   <Text style={[styles.bentoTimerLabel, { color: accent }]}>
-                    DAILY RESET
+                    {translate("dailyResetLabel")}
                   </Text>
                   <Text style={[styles.bentoStreakText, { color: accent }]}>
                     STREAK: {state.streak}
@@ -3594,7 +3599,7 @@ export default function App() {
 
               {/* Active Pact Ring — dual view (fractured + sealed) */}
               <View style={[styles.pactRingSection, { borderColor: accent }]}>
-                <Text style={styles.pactRingSectionTitle}>ACTIVE PACT</Text>
+                <Text style={styles.pactRingSectionTitle}>{translate("activePactTitle")}</Text>
                 <View style={styles.pactRingDualView}>
                   <View style={styles.pactRingHalf}>
                     <PactRing
@@ -3913,7 +3918,7 @@ export default function App() {
                     <Text style={[styles.statValue, { color: accent }]}>
                       {state.streak}
                     </Text>
-                    <Text style={styles.statSubLabel}>DAYS</Text>
+                    <Text style={styles.statSubLabel}>{translate("daysLabel")}</Text>
                   </View>
                   <View
                     style={[
@@ -3929,7 +3934,7 @@ export default function App() {
                       {state.level}
                     </Text>
                     <Text style={styles.statSubLabel}>
-                      {founderPrivilegesActive ? "FOUNDER" : `${state.xp} XP`}
+                      {founderPrivilegesActive ? translate("founderLabel") : `${state.xp} ${translate("xpLabel")}`}
                     </Text>
                   </View>
                 </Animated.View>
@@ -4285,7 +4290,7 @@ export default function App() {
                   </View>
 
                   <AnimatedReanimated.View style={planningPanelStyle}>
-                    <Text style={styles.storeTitle}>Mission node</Text>
+                    <Text style={styles.storeTitle}>{translate("missionNodeLabel")}</Text>
                     <TextInput
                       style={[
                         styles.input,
@@ -4293,10 +4298,10 @@ export default function App() {
                       ]}
                       value={contractTask}
                       onChangeText={setContractTask}
-                      placeholder="What must be done?"
+                      placeholder={translate("whatMustBeDonePlaceholder")}
                       placeholderTextColor="rgba(244,244,245,0.32)"
                     />
-                    <Text style={styles.storeTitle}>Duration (minutes)</Text>
+                    <Text style={styles.storeTitle}>{translate("durationLabel")}</Text>
                     <TextInput
                       style={[
                         styles.input,
@@ -4308,7 +4313,7 @@ export default function App() {
                       keyboardType="numeric"
                       placeholderTextColor="rgba(244,244,245,0.32)"
                     />
-                    <Text style={styles.storeTitle}>Risk stake (PP)</Text>
+                    <Text style={styles.storeTitle}>{translate("riskStakeLabel")}</Text>
                     <TextInput
                       style={[styles.input, { borderColor: accent }]}
                       value={contractStake}
@@ -4343,7 +4348,7 @@ export default function App() {
                       style={[styles.input, { borderColor: accent, marginTop: 2 }]}
                       value={draft}
                       onChangeText={setDraft}
-                      placeholder="Record the completed proof..."
+                      placeholder={translate("proofPlaceholder")}
                       placeholderTextColor="rgba(244,244,245,0.32)"
                       multiline
                     />
@@ -4357,7 +4362,7 @@ export default function App() {
                   </AnimatedReanimated.View>
 
                   <AnimatedReanimated.View style={executionPanelStyle}>
-                    <Text style={styles.executionLabel}>TIME TO LOCK</Text>
+                    <Text style={styles.executionLabel}>{translate("timeToLockLabel")}</Text>
                     <Text style={[styles.executionDial, { color: accent }]}>
                       {executionCountdown}
                     </Text>
@@ -4382,21 +4387,21 @@ export default function App() {
                   </Text>
                   <View style={styles.briefingRow}>
                     <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
-                      <Text style={styles.briefingMetricLabel}>ACTIVE MISSION</Text>
+                      <Text style={styles.briefingMetricLabel}>{translate("activeMissionLabel")}</Text>
                       <Text style={styles.briefingMetricValue}>{state.missionTitle}</Text>
                     </View>
                     <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
-                      <Text style={styles.briefingMetricLabel}>MISSION CLOCK</Text>
+                      <Text style={styles.briefingMetricLabel}>{translate("missionClockLabel")}</Text>
                       <Text style={styles.briefingMetricValue}>{missionCountdown}</Text>
                     </View>
                   </View>
                   <View style={styles.briefingRow}>
                     <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
-                      <Text style={styles.briefingMetricLabel}>RISK</Text>
+                      <Text style={styles.briefingMetricLabel}>{translate("riskLabel")}</Text>
                       <Text style={styles.briefingMetricValue}>{state.missionRisk}</Text>
                     </View>
                     <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
-                      <Text style={styles.briefingMetricLabel}>REWARD</Text>
+                      <Text style={styles.briefingMetricLabel}>{translate("rewardLabel")}</Text>
                       <Text style={styles.briefingMetricValue}>+{state.missionRewardBonus} PP</Text>
                     </View>
                   </View>
@@ -5344,6 +5349,8 @@ export default function App() {
             onNext={handleTutorialNext}
             onPrev={handleTutorialPrev}
             onSkip={handleTutorialSkip}
+            steps={tutorialSteps}
+            language={language}
           />
         )}
         {isWeb ? (
