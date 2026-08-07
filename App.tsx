@@ -2,6 +2,7 @@ import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
+import appConfig from "./app.json";
 import * as Haptics from "expo-haptics";
 import React, {
   useCallback,
@@ -2867,6 +2868,9 @@ export default function App() {
             </View>
             <Text style={[styles.webGlobalAuth, { color: accent }]}>
               SYS_AUTH: OVERSEER UPLINK
+            </Text>
+            <Text style={[styles.webGlobalAuth, { color: accent }]}>
+              APP VERSION: {appConfig.expo.version}
             </Text>
           </View>
         )}
