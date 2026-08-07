@@ -2357,7 +2357,7 @@ export default function App() {
       ownedDesignTemplates,
       selectedDesignTemplateId,
     });
-    setStatusMessage(`LANGUAGE SET: ${nextLanguage.toUpperCase()}`);
+    setStatusMessage(getLocalizedText("languageSaved", nextLanguage));
   };
 
   const handleCLICommand = useCallback(() => {
@@ -4918,9 +4918,14 @@ export default function App() {
               >
                 <View style={[styles.panel, { borderColor: accent }]}>
                   <View style={styles.languageRow}>
-                    <Text style={[styles.panelTitle, { color: accent }]}>
-                      [ {getLocalizedText("howToUse", language)} ]
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.panelTitle, { color: accent }]}>
+                        [ {getLocalizedText("languagePickerTitle", language)} ]
+                      </Text>
+                      <Text style={[styles.storeStatus, { marginTop: 6 }]}>
+                        {getLocalizedText("profileLanguageNote", language)}
+                      </Text>
+                    </View>
                     <View
                       style={[styles.languagePicker, { borderColor: accent }]}
                     >
