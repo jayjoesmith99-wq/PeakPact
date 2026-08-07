@@ -3,7 +3,7 @@ import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import appConfig from "./app.json";
-import * as Haptics from "expo-haptics";
+import Haptics from "./src/utils/haptics";
 import React, {
   useCallback,
   useEffect,
@@ -2915,7 +2915,35 @@ export default function App() {
                   LEVEL PROGRESS: {progressionView.nextLevelProgress.percent}%
                 </Text>
               </View>
+              <View style={[styles.bentoWindow, { borderColor: accent }]}> 
+                <Text style={styles.bentoWindowTitle}>COMMAND SUMMARY</Text>
+                <Text style={[styles.webLedgerDetail, { color: accent }]}> 
+                  {state.missionTitle}
+                </Text>
+                <Text style={styles.webLedgerDetail}> 
+                  {state.missionRisk} • {contractDuration} MIN
+                </Text>
+                <Text style={styles.webLedgerDetail}>NEXT LOCK: {missionCountdown}</Text>
+                <View style={styles.dashboardActionRow}>
+                  <Pressable
+                    style={[
+                      styles.dashboardActionButton,
+                      styles.dashboardActionButtonPrimary,
+                    ]}
+                    onPress={launchPactExecution}
+                  >
+                    <Text style={styles.dashboardActionButtonText}>LOCK IN</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.dashboardActionButton, { borderColor: accent }]}
+                    onPress={() => setPactFlowMode("planning")}
+                  >
+                    <Text style={styles.dashboardActionButtonText}>DEPLOY</Text>
+                  </Pressable>
+                </View>
+              </View>
               <View style={[styles.bentoWindow, { borderColor: accent }]}>
+
                 <Text style={styles.bentoWindowTitle}>{translate("logsTitle")}</Text>
                 {state.terminalLines.slice(-6).map((line, i) => (
                   <Text key={i} style={[styles.logLine, { color: accent }]}>
@@ -3068,6 +3096,35 @@ export default function App() {
             overScrollMode="always"
           >
             <View style={styles.appShell}>
+              {!isWeb ? (
+                <View style={[styles.dashboardGreetingCard, { borderColor: accent }]}> 
+                  <Text style={[styles.dashboardGreetingLabel, { color: accent }]}>COMMAND CENTER</Text>
+                  <Text style={styles.dashboardGreetingTitle}>
+                    OPERATOR {operatorCodename}
+                  </Text>
+                  <Text style={styles.dashboardGreetingSubtitle}>
+                    STREAK {state.streak} • LEVEL {state.level} • {displayPp} PP
+                  </Text>
+                  <View style={styles.dashboardActionRow}>
+                    <Pressable
+                      style={[
+                        styles.dashboardActionButton,
+                        styles.dashboardActionButtonPrimary,
+                      ]}
+                      onPress={launchPactExecution}
+                    >
+                      <Text style={styles.dashboardActionButtonText}>LOCK IN</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.dashboardActionButton, { borderColor: accent }]}
+                      onPress={() => setPactFlowMode("planning")}
+                    >
+                      <Text style={styles.dashboardActionButtonText}>QUICK DEPLOY</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
+
               {/* SYS_STATUS micro strip */}
               <View style={styles.sysStatusStrip}>
                 <Text
@@ -6671,7 +6728,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   webLeftCol: {
-    width: 280,
+    width: 320,
     borderRightWidth: 1,
     borderRightColor: "rgba(255,42,42,0.2)",
   },
@@ -6679,13 +6736,87 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   webRightCol: {
-    width: 280,
+    width: 320,
     borderLeftWidth: 1,
     borderLeftColor: "rgba(255,42,42,0.2)",
   },
   webColContent: {
     padding: 12,
     gap: 10,
+  },
+  dashboardGreetingCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    backgroundColor: "rgba(0,0,0,0.88)",
+  },
+  dashboardGreetingLabel: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  dashboardGreetingTitle: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  dashboardGreetingSubtitle: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 11,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  dashboardActionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  dashboardActionButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderColor: "rgba(37,249,213,0.24)",
+  },
+  dashboardActionButtonPrimary: {
+    backgroundColor: "rgba(37,249,213,0.18)",
+  },
+  dashboardActionButtonText: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+  dashboardMetricCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderColor: "rgba(37,249,213,0.24)",
+  },
+  dashboardMetricLabel: {
+    color: "#C0C0C8",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  dashboardMetricValue: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 18,
+    fontWeight: "700",
   },
   bentoWindow: {
     borderWidth: 1,
