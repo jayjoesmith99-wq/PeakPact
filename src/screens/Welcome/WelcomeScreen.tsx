@@ -50,6 +50,7 @@ export default function WelcomeScreen({
   const [phase, setPhase] = useState<SequencePhase>('intro');
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
   const videoRef = useRef<Video>(null);
 
   const textOpacity = useSharedValue(0);
@@ -126,9 +127,11 @@ export default function WelcomeScreen({
           return;
         }
 
+        await videoRef.current.setIsMutedAsync(true);
         await videoRef.current.playAsync();
         if (mounted) {
           setVideoReady(true);
+          setVideoMuted(true);
         }
       } catch {
         if (mounted) {
@@ -162,14 +165,15 @@ export default function WelcomeScreen({
             source={welcomeVideo}
             style={styles.video}
             resizeMode={ResizeMode.COVER}
-            shouldPlay={false}
+            shouldPlay
             isLooping={false}
             useNativeControls={false}
-            isMuted={false}
+            isMuted={videoMuted}
             onError={() => setVideoError(true)}
             onReadyForDisplay={() => {
               setVideoReady(true);
               setVideoError(false);
+              setVideoMuted(true);
             }}
             onPlaybackStatusUpdate={(status) => {
               if (status.isLoaded && !status.isBuffering && status.positionMillis > 0) {
@@ -259,10 +263,18 @@ const styles = StyleSheet.create({
   logoShell: {
     alignSelf: 'center',
     marginTop: 8,
+    width: 90,
+    height: 90,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111111',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   logo: {
-    width: 104,
-    height: 104,
+    width: 48,
+    height: 48,
   },
   textContainer: {
     alignItems: 'center',
@@ -270,79 +282,68 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   titleText: {
-    color: '#9eff9e',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 2.6,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-    textShadowColor: 'rgba(158, 255, 158, 0.75)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
+    color: '#F5F5F5',
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: 1.8,
+    marginBottom: 14,
   },
   messageText: {
-    color: '#f3fff1',
-    fontSize: 26,
-    fontWeight: '700',
-    lineHeight: 34,
+    color: '#A0A0A0',
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 26,
     textAlign: 'center',
-    textShadowColor: 'rgba(158, 255, 158, 0.42)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 18,
   },
   buttonRow: {
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     marginBottom: 12,
   },
   primaryButton: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: 999,
-    paddingVertical: 15,
+    borderRadius: 18,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(0, 255, 102, 0.16)',
-    borderWidth: 1.2,
-    borderColor: '#6fff8a',
-    shadowColor: '#6fff8a',
-    shadowOpacity: 0.55,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
+    backgroundColor: '#76FF03',
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#76FF03',
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
   },
   primaryButtonPressed: {
-    transform: [{ scale: 0.98 }],
+    opacity: 0.92,
   },
   primaryButtonText: {
-    color: '#f3fff1',
+    color: '#080808',
     fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1.8,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
   },
   secondaryButton: {
     width: '100%',
     maxWidth: 220,
-    borderRadius: 999,
-    paddingVertical: 12,
+    borderRadius: 18,
+    paddingVertical: 16,
     paddingHorizontal: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.44)',
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: '#6fff8a',
-    shadowColor: '#6fff8a',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
+    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryButtonPressed: {
-    transform: [{ scale: 0.97 }],
+    opacity: 0.92,
   },
   secondaryButtonText: {
-    color: '#6fff8a',
-    fontSize: 13,
+    color: '#F5F5F5',
+    fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 1.6,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
   },
 });

@@ -97,23 +97,62 @@ export function getOperatorManualEntries(language: string) {
   ];
 }
 
+function getLevelFromXP(xp: number) {
+  if (xp >= 50000) {
+    return 99;
+  }
+
+  let currentLevel = 1;
+  let threshold = 500;
+  let remainingXp = xp;
+
+  while (remainingXp >= threshold && currentLevel < 99) {
+    remainingXp -= threshold;
+    currentLevel += 1;
+    threshold += 500;
+  }
+
+  return Math.min(currentLevel, 99);
+}
+
+function getXpThresholdForLevel(level: number) {
+  if (level <= 1) return 0;
+  return 500 * (level - 1) * level / 2;
+}
+
 export function getProgressionSnapshot(context: Record<string, unknown>, language: string) {
+  const xp = typeof context.xp === 'number' ? context.xp : 0;
+  const level = typeof context.level === 'number' ? context.level : getLevelFromXP(xp);
+  const activeLevel = Math.min(Math.max(level, 1), 99);
+  const currentThreshold = getXpThresholdForLevel(activeLevel);
+  const nextThreshold = activeLevel >= 99 ? currentThreshold : getXpThresholdForLevel(activeLevel + 1);
+  const progressPercent = activeLevel >= 99
+    ? 100
+    : xp === currentThreshold
+      ? 100
+      : Math.min(100, Math.max(0, Math.round(((xp - currentThreshold) / Math.max(1, nextThreshold - currentThreshold)) * 100)));
+
   return {
-    nextLevelProgress: { percent: 40 },
+    nextLevelProgress: { percent: progressPercent },
     hallOfFame: [
-      { title: "Execution", value: "Stable", detail: "Maintain daily streak." },
+      { title: 'Execution', value: 'Stable', detail: 'Maintain daily streak.' },
     ],
-    towerFloors: [
-      { floor: 1, label: "INIT", active: true, unlocked: true },
-      { floor: 2, label: "RAMP", active: false, unlocked: false },
-    ],
+    towerFloors: Array.from({ length: 99 }, (_, index) => {
+      const floor = index + 1;
+      return {
+        floor,
+        label: `FLOOR ${floor}`,
+        active: floor === activeLevel,
+        unlocked: floor <= activeLevel,
+      };
+    }),
     skills: [
-      { title: "FOCUS", value: "3", description: "Maintain attention on objective." },
+      { title: 'FOCUS', value: '3', description: 'Maintain attention on objective.' },
     ],
     ascension: {
-      title: "PATH FORGE",
-      subtitle: "Progress through daily discipline.",
-      rewardLabel: "New template unlock",
+      title: 'PATH FORGE',
+      subtitle: 'Progress through daily discipline.',
+      rewardLabel: 'New template unlock',
     },
   };
 }

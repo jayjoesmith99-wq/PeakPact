@@ -16,16 +16,17 @@ export default function AppNavigator() {
         initialRouteName="Welcome"
         screenOptions={{
           headerStyle: {
-            backgroundColor: 'rgba(2, 6, 14, 0.96)',
+            backgroundColor: '#111111',
+            borderBottomWidth: 0,
           } as any,
-          headerTintColor: '#f3fff1',
+          headerTintColor: '#F5F5F5',
           headerTitleStyle: {
-            color: '#f3fff1',
+            color: '#F5F5F5',
             fontWeight: '700',
             fontSize: 15,
           },
           contentStyle: {
-            backgroundColor: '#02060c',
+            backgroundColor: '#080808',
           },
         }}
       >

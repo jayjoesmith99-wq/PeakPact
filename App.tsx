@@ -293,10 +293,30 @@ const evaluatePact = (text: string, contract?: PactContract) => {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const PACT_MACROS = [
-  { label: "FOCUS", value: "Complete a focused 45-minute study sprint" },
-  { label: "RECOVERY", value: "Complete a high-quality recovery block and document the outcome" },
-  { label: "EXECUTE", value: "Deliver a measurable execution sprint with clear proof" },
-  { label: "RESET", value: "Reset the loop with a short, disciplined reset block" },
+  {
+    label: "FOCUS",
+    value: "Complete a focused 45-minute study sprint",
+    duration: 45,
+    stake: 20,
+  },
+  {
+    label: "RECOVERY",
+    value: "Complete a high-quality recovery block and document the outcome",
+    duration: 30,
+    stake: 12,
+  },
+  {
+    label: "EXECUTE",
+    value: "Deliver a measurable execution sprint with clear proof",
+    duration: 60,
+    stake: 30,
+  },
+  {
+    label: "RESET",
+    value: "Reset the loop with a short, disciplined reset block",
+    duration: 15,
+    stake: 10,
+  },
 ] as const;
 
 // ── Navigation ───────────────────────────────────────────────────────────
@@ -1510,6 +1530,26 @@ export default function App() {
 
     void hydrateLanguage();
   }, []);
+
+  useEffect(() => {
+    if (!hasHydratedPersistence) return;
+    void savePersistedAppState({
+      onboardingSeen,
+      language,
+      squads,
+      activeSquadId,
+      ownedDesignTemplates,
+      selectedDesignTemplateId,
+    });
+  }, [
+    hasHydratedPersistence,
+    onboardingSeen,
+    language,
+    squads,
+    activeSquadId,
+    ownedDesignTemplates,
+    selectedDesignTemplateId,
+  ]);
 
   useEffect(() => {
     const hydrateProfile = async () => {
@@ -4263,7 +4303,11 @@ export default function App() {
                             styles.macroChip,
                             { borderColor: accent },
                           ]}
-                          onPress={() => setContractTask(macro.value)}
+                          onPress={() => {
+                            setContractTask(macro.value);
+                            setContractDuration(String(macro.duration));
+                            setContractStake(String(macro.stake));
+                          }}
                         >
                           <Text
                             style={[styles.macroChipText, { color: accent }]}

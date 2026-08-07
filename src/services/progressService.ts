@@ -10,8 +10,30 @@ export async function createClientPayloadSignature(userId: string, text: string,
   return `sig-${userId}-${Math.round(Date.now() / 1000)}`;
 }
 
+const MAX_LEVEL = 99;
+const LEVEL_CAP_XP = 50000;
+
+function getXpThresholdForLevel(level: number) {
+  if (level <= 1) return 0;
+  return 500 * (level - 1) * level / 2;
+}
+
 export function getLevelFromXP(xp: number) {
-  return Math.max(1, Math.floor(xp / 1000) + 1);
+  if (xp >= LEVEL_CAP_XP) {
+    return MAX_LEVEL;
+  }
+
+  let currentLevel = 1;
+  let threshold = 500;
+  let remainingXp = xp;
+
+  while (remainingXp >= threshold && currentLevel < MAX_LEVEL) {
+    remainingXp -= threshold;
+    currentLevel += 1;
+    threshold += 500;
+  }
+
+  return Math.min(currentLevel, MAX_LEVEL);
 }
 
 export function getXpForPactStake(stakePP: number) {
