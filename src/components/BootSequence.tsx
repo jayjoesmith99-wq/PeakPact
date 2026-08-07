@@ -20,6 +20,7 @@ export default function BootSequence({
     <View style={styles.container}>
       <Image source={backdrop} style={styles.backdrop} resizeMode="cover" />
       <View style={styles.backdropOverlay} />
+      <View style={styles.glowOrb} />
       <View style={styles.content}>
         <Image source={logo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.eyebrow}>WELCOME TRANSMISSION</Text>
@@ -78,18 +79,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1,
   },
+  glowOrb: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(111, 255, 138, 0.06)",
+    top: -120,
+    left: -120,
+    right: "35%",
+    bottom: "45%",
+    borderRadius: 999,
+    transform: [{ rotate: "18deg" }],
+  },
   logo: {
     width: 108,
     height: 108,
     marginBottom: 14,
   },
   eyebrow: {
-    color: "#25F9D5",
+    color: "#6fff8a",
     fontFamily: "monospace",
     fontSize: 11,
     letterSpacing: 2.4,
     marginBottom: 6,
     textTransform: "uppercase",
+    fontWeight: "700",
   },
   title: {
     color: "#F7FCFF",
@@ -98,6 +110,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
     letterSpacing: 1.6,
+    textShadowColor: "rgba(111, 255, 138, 0.26)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
   },
   subtitle: {
     color: "#C2D5E3",
@@ -106,6 +121,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     textAlign: "center",
     lineHeight: 20,
+    maxWidth: 420,
   },
   videoShell: {
     width: "100%",
@@ -113,11 +129,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(37, 249, 213, 0.42)",
+    borderColor: "rgba(111, 255, 138, 0.36)",
     backgroundColor: "rgba(3, 8, 18, 0.88)",
     marginBottom: 14,
-    shadowColor: "#25F9D5",
-    shadowOpacity: 0.24,
+    shadowColor: "#6fff8a",
+    shadowOpacity: 0.22,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
   },
@@ -133,7 +149,7 @@ const styles = StyleSheet.create({
   copyPanel: {
     width: "100%",
     borderWidth: 1,
-    borderColor: "rgba(79, 163, 255, 0.28)",
+    borderColor: "rgba(111, 255, 138, 0.24)",
     backgroundColor: "rgba(4, 10, 20, 0.78)",
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -149,12 +165,12 @@ const styles = StyleSheet.create({
   },
   button: {
     borderWidth: 1,
-    borderColor: "rgba(37, 249, 213, 0.54)",
-    backgroundColor: "rgba(37, 249, 213, 0.16)",
+    borderColor: "rgba(111, 255, 138, 0.54)",
+    backgroundColor: "rgba(111, 255, 138, 0.16)",
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 999,
-    shadowColor: "#4FA3FF",
+    shadowColor: "#6fff8a",
     shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
