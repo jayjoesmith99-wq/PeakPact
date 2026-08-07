@@ -38,7 +38,9 @@ export async function loadPersistedAppState(): Promise<PersistedAppState | null>
           ? parsed.onboardingSeen
           : DEFAULT_PERSISTED_STATE.onboardingSeen,
       language:
-        parsed.language === "ro" ? "ro" : DEFAULT_PERSISTED_STATE.language,
+        parsed.language === "es" || parsed.language === "fr" || parsed.language === "de" || parsed.language === "pt" || parsed.language === "ja" || parsed.language === "zh"
+          ? parsed.language
+          : DEFAULT_PERSISTED_STATE.language,
       squads: Array.isArray(parsed.squads) ? parsed.squads : DEFAULT_PERSISTED_STATE.squads,
       activeSquadId:
         parsed.activeSquadId === null || typeof parsed.activeSquadId === "string"

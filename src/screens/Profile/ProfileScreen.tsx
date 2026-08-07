@@ -7,25 +7,26 @@ import {
   Text,
   View,
 } from 'react-native';
+import { getLocalizedText } from '../../i18n';
 
 export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#080808" />
       <ScrollView contentContainerStyle={styles.content} bounces={false} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>Review your operator status and identity details.</Text>
+        <Text style={styles.title}>{getLocalizedText('profileTitle')}</Text>
+        <Text style={styles.subtitle}>{getLocalizedText('profileSubtitle')}</Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>Codename</Text>
-          <Text style={styles.cardValue}>OPERATOR</Text>
-          <Text style={styles.cardNote}>Your system alias and active access credential.</Text>
+          <Text style={styles.cardLabel}>{getLocalizedText('profileCodenameLabel')}</Text>
+          <Text style={styles.cardValue}>{getLocalizedText('profileCodenameValue')}</Text>
+          <Text style={styles.cardNote}>{getLocalizedText('profileCodenameNote')}</Text>
         </View>
 
         <View style={styles.card}> 
-          <Text style={styles.cardLabel}>Membership</Text>
-          <Text style={styles.cardValue}>Core Protocol Operator</Text>
-          <Text style={styles.cardNote}>Status reflects your current discipline tier and trust level.</Text>
+          <Text style={styles.cardLabel}>{getLocalizedText('profileMembershipLabel')}</Text>
+          <Text style={styles.cardValue}>{getLocalizedText('profileMembershipValue')}</Text>
+          <Text style={styles.cardNote}>{getLocalizedText('profileMembershipNote')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

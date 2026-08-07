@@ -6,6 +6,7 @@ import HabitTrackerScreen from '../screens/Habits/HabitTrackerScreen';
 import AudioPlayerScreen from '../screens/AudioPlayer/AudioPlayerScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import WelcomeScreen from '../screens/Welcome/WelcomeScreen';
+import { getLocalizedText } from '../i18n';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,10 +32,10 @@ export default function AppNavigator() {
         }}
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'COMMAND CENTER' }} />
-        <Stack.Screen name="Habits" component={HabitTrackerScreen} options={{ title: 'HABITS' }} />
-        <Stack.Screen name="Audio" component={AudioPlayerScreen} options={{ title: 'AUDIO' }} />
-        <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'PROFILE' }} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ title: getLocalizedText('navHome') }} />
+        <Stack.Screen name="Habits" component={HabitTrackerScreen} options={{ title: getLocalizedText('navHabits') }} />
+        <Stack.Screen name="Audio" component={AudioPlayerScreen} options={{ title: getLocalizedText('navAudio') }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: getLocalizedText('navProfile') }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

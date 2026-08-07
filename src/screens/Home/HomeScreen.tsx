@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getLocalizedText } from '../../i18n';
 
 const backdrop = require('../../../assets/elite-backdrop.jpeg');
 const logo = require('../../../assets/logo.peakpact.png');
@@ -31,9 +32,9 @@ type QuickAction = {
 };
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'ENGAGE PACT', route: 'Habits', accent: '#6fff8a' },
-  { label: 'AUDIO BRIEF', route: 'Audio', accent: '#89b4ff' },
-  { label: 'VIEW PROFILE', route: 'Profile', accent: '#ffd36b' },
+  { label: 'homeProtocol', route: 'Habits', accent: '#6fff8a' },
+  { label: 'homeAudio', route: 'Audio', accent: '#89b4ff' },
+  { label: 'homeProfile', route: 'Profile', accent: '#ffd36b' },
 ];
 
 const METRIC_CARDS = [
@@ -46,11 +47,9 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
-  const [missionGoal, setMissionGoal] = useState(
-    'Complete a focused 45-minute study sprint',
-  );
-  const [missionDuration, setMissionDuration] = useState('45');
-  const [missionStake, setMissionStake] = useState('20');
+  const [missionGoal, setMissionGoal] = useState<string>(getLocalizedText('macroFocusValue'));
+  const [missionDuration, setMissionDuration] = useState<string>('45');
+  const [missionStake, setMissionStake] = useState<string>('20');
 
   const handleLockIn = () => {
     navigation.navigate('Habits');
@@ -75,20 +74,20 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.brandTextWrap}>
                   <Text style={styles.eyebrow}>OPERATOR COMMAND CENTER</Text>
-                  <Text style={styles.title}>PEAKPACT</Text>
+                  <Text style={styles.title}>{getLocalizedText('appTitle')}</Text>
                 </View>
               </View>
 
               <View style={styles.greetingBlock}>
-                <Text style={styles.greetingHeadline}>Welcome back, Operator.</Text>
+                <Text style={styles.greetingHeadline}>{getLocalizedText('homeGreetingHeadline')}</Text>
                 <Text style={styles.greetingSubhead}>
-                  Your streak is holding. Lock in the next mission and keep the system aligned.
+                  {getLocalizedText('homeGreetingSubhead')}
                 </Text>
               </View>
 
               <View style={styles.statusPanel}>
-                <Text style={styles.statusLabel}>SYSTEM STATUS</Text>
-                <Text style={styles.statusValue}>READY FOR ALIGNMENT</Text>
+                <Text style={styles.statusLabel}>{getLocalizedText('homeProtocol')}</Text>
+                <Text style={styles.statusValue}>{getLocalizedText('homeQuickDeploy')}</Text>
               </View>
 
               <View style={styles.metricStack}>
@@ -108,15 +107,15 @@ export default function HomeScreen() {
 
           <View style={[styles.column, styles.centerColumn]}>
             <View style={styles.commandPanel}>
-              <Text style={styles.panelLabel}>MISSION DIRECTIVE</Text>
-              <Text style={styles.panelTitle}>Create your next focused contract</Text>
+              <Text style={styles.panelLabel}>{getLocalizedText('homeMissionDirective')}</Text>
+              <Text style={styles.panelTitle}>{getLocalizedText('homeCreateMission')}</Text>
               <Text style={styles.panelDescription}>
-                Build a short, sharp objective that keeps you on track and aligned with the system.
+                {getLocalizedText('homeMissionDescription')}
               </Text>
 
               <View style={styles.fieldStack}>
                 <View style={styles.fieldBlock}>
-                  <Text style={styles.fieldLabel}>MISSION GOAL</Text>
+                  <Text style={styles.fieldLabel}>{getLocalizedText('homeMissionGoal')}</Text>
                   <TextInput
                     value={missionGoal}
                     onChangeText={setMissionGoal}
@@ -128,7 +127,7 @@ export default function HomeScreen() {
 
                 <View style={styles.miniFieldRow}>
                   <View style={styles.miniField}>
-                    <Text style={styles.fieldLabel}>DURATION</Text>
+                    <Text style={styles.fieldLabel}>{getLocalizedText('homeDuration')}</Text>
                     <TextInput
                       value={missionDuration}
                       onChangeText={setMissionDuration}
@@ -139,7 +138,7 @@ export default function HomeScreen() {
                     />
                   </View>
                   <View style={styles.miniField}>
-                    <Text style={styles.fieldLabel}>STAKE</Text>
+                    <Text style={styles.fieldLabel}>{getLocalizedText('homeStake')}</Text>
                     <TextInput
                       value={missionStake}
                       onChangeText={setMissionStake}
@@ -157,13 +156,13 @@ export default function HomeScreen() {
                 onPress={handleLockIn}
                 style={({ pressed }) => [styles.lockButton, pressed && styles.pressed]}
               >
-                <Text style={styles.lockButtonText}>LOCK IT IN</Text>
+                <Text style={styles.lockButtonText}>{getLocalizedText('homeLockItIn')}</Text>
                 <Text style={styles.lockButtonAux}>{`${missionDuration} min · ${missionStake} PP stake`}</Text>
               </Pressable>
             </View>
 
             <View style={styles.quickActionsPanel}>
-              <Text style={styles.panelLabel}>QUICK DEPLOY</Text>
+              <Text style={styles.panelLabel}>{getLocalizedText('homeQuickDeploy')}</Text>
               <View style={styles.quickActionRow}>
                 {QUICK_ACTIONS.map((action) => (
                   <Pressable
@@ -172,7 +171,7 @@ export default function HomeScreen() {
                     onPress={() => navigation.navigate(action.route)}
                     style={({ pressed }) => [styles.quickAction, pressed && styles.pressed]}
                   >
-                    <Text style={styles.quickActionText}>{action.label}</Text>
+                    <Text style={styles.quickActionText}>{getLocalizedText(action.label as any)}</Text>
                     <View
                       style={[styles.quickAccent, { backgroundColor: action.accent }]}
                     />
@@ -184,47 +183,47 @@ export default function HomeScreen() {
 
           <View style={[styles.column, styles.rightColumn]}>
             <View style={styles.snapshotPanel}>
-              <Text style={styles.panelLabel}>DAILY SNAPSHOT</Text>
-              <Text style={styles.panelTitle}>Current progress and readiness</Text>
+              <Text style={styles.panelLabel}>{getLocalizedText('homeDailySnapshot')}</Text>
+              <Text style={styles.panelTitle}>{getLocalizedText('homeSnapshotTitle')}</Text>
               <View style={styles.snapshotList}>
                 <View style={styles.snapshotRow}>
-                  <Text style={styles.snapshotLabel}>Mission cadence</Text>
+                  <Text style={styles.snapshotLabel}>{getLocalizedText('homeSnapshotMissionCadence')}</Text>
                   <Text style={styles.snapshotValue}>Balanced</Text>
                 </View>
                 <View style={styles.snapshotRow}>
-                  <Text style={styles.snapshotLabel}>Today planned</Text>
+                  <Text style={styles.snapshotLabel}>{getLocalizedText('homeSnapshotTodayPlanned')}</Text>
                   <Text style={styles.snapshotValue}>1 mission</Text>
                 </View>
                 <View style={styles.snapshotRow}>
-                  <Text style={styles.snapshotLabel}>Recovery reserve</Text>
+                  <Text style={styles.snapshotLabel}>{getLocalizedText('homeSnapshotRecoveryReserve')}</Text>
                   <Text style={styles.snapshotValue}>2 stabilizations</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.bottomNavCard}>
-              <Text style={styles.panelLabel}>COMMAND SHORTCUTS</Text>
+              <Text style={styles.panelLabel}>{getLocalizedText('homeCommandShortcuts')}</Text>
               <View style={styles.navRow}>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => navigation.navigate('Habits')}
                   style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}
                 >
-                  <Text style={styles.navLabel}>PROTOCOL</Text>
+                  <Text style={styles.navLabel}>{getLocalizedText('homeProtocol')}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => navigation.navigate('Audio')}
                   style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}
                 >
-                  <Text style={styles.navLabel}>AUDIO</Text>
+                  <Text style={styles.navLabel}>{getLocalizedText('homeAudio')}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => navigation.navigate('Profile')}
                   style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}
                 >
-                  <Text style={styles.navLabel}>PROFILE</Text>
+                  <Text style={styles.navLabel}>{getLocalizedText('homeProfile')}</Text>
                 </Pressable>
               </View>
             </View>

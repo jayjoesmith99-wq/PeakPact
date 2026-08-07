@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getLocalizedText } from '../../i18n';
 
 const welcomeVideo = require('../../../assets/9e977029180a9977b941d4d9561753b0.mp4');
 const logo = require('../../../assets/logo.peakpact.png');
@@ -37,9 +38,9 @@ type WelcomeScreenProps = {
 type SequencePhase = 'intro' | 'directive' | 'contract' | 'outro';
 
 const messages: Record<Exclude<SequencePhase, 'outro'>, string> = {
-  intro: 'Comfort is a liability.',
-  directive: 'You are here because the old way failed. This system does not care about your motivation.',
-  contract: 'This is a binding contract. You lock the terminal. You execute. Or the system takes its cut.',
+  intro: 'welcomeIntro',
+  directive: 'welcomeDirective',
+  contract: 'welcomeContract',
 };
 
 export default function WelcomeScreen({
@@ -153,7 +154,7 @@ export default function WelcomeScreen({
     };
   }, []);
 
-  const currentMessage = phase !== 'outro' ? messages[phase] : null;
+  const currentMessage = phase !== 'outro' ? getLocalizedText(messages[phase]) : null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -192,7 +193,7 @@ export default function WelcomeScreen({
           </Animated.View>
 
           <Animated.View style={[styles.textContainer, textAnimatedStyle]}>
-            <Text style={styles.titleText}>PEAKPACT</Text>
+            <Text style={styles.titleText}>{getLocalizedText('appTitle')}</Text>
             {currentMessage ? <Text style={styles.messageText}>{currentMessage}</Text> : null}
           </Animated.View>
 
@@ -205,7 +206,7 @@ export default function WelcomeScreen({
                 pressed && styles.primaryButtonPressed,
               ]}
             >
-              <Text style={styles.primaryButtonText}>INITIALIZE PROTOCOL</Text>
+              <Text style={styles.primaryButtonText}>{getLocalizedText('welcomeInitializeProtocol')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -215,7 +216,7 @@ export default function WelcomeScreen({
                 pressed && styles.secondaryButtonPressed,
               ]}
             >
-              <Text style={styles.secondaryButtonText}>LOGIN</Text>
+              <Text style={styles.secondaryButtonText}>{getLocalizedText('welcomeLogin')}</Text>
             </Pressable>
           </Animated.View>
         </View>

@@ -130,6 +130,7 @@ import {
   setStoredLanguage,
   type SupportedLanguage,
 } from "./src/services/i18n";
+import { initializeI18n } from "./src/i18n";
 import { TUTORIAL_STEPS } from "./src/services/tutorialService";
 import {
   getRecoveryVisualState,
@@ -292,66 +293,9 @@ const evaluatePact = (text: string, contract?: PactContract) => {
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const PACT_MACROS = [
-  {
-    label: "FOCUS",
-    value: "Complete a focused 45-minute study sprint",
-    duration: 45,
-    stake: 20,
-  },
-  {
-    label: "RECOVERY",
-    value: "Complete a high-quality recovery block and document the outcome",
-    duration: 30,
-    stake: 12,
-  },
-  {
-    label: "EXECUTE",
-    value: "Deliver a measurable execution sprint with clear proof",
-    duration: 60,
-    stake: 30,
-  },
-  {
-    label: "RESET",
-    value: "Reset the loop with a short, disciplined reset block",
-    duration: 15,
-    stake: 10,
-  },
-] as const;
 
 // ── Navigation ───────────────────────────────────────────────────────────
 type AppTab = "PACT" | "SQUAD" | "STORE" | "PROFILE" | "SYSTEM";
-
-const APP_TABS: { id: AppTab; label: string }[] = [
-  { id: "PACT", label: "PACT" },
-  { id: "SQUAD", label: "SQUAD" },
-  { id: "STORE", label: "STORE" },
-  { id: "PROFILE", label: "PROFILE" },
-  { id: "SYSTEM", label: "SYSTEM" },
-];
-
-const TAB_INTROS: Record<AppTab, { title: string; body: string }> = {
-  PACT: {
-    title: "PACT OPERATIONS",
-    body: "Write a contract, stake PP, and submit proof of completion. The AI verifies your report and awards or deducts points.",
-  },
-  SQUAD: {
-    title: "SQUAD NETWORK",
-    body: "Build or join accountability crews. Members see each other's live adherence and PP status in real time. Leaving costs PP.",
-  },
-  STORE: {
-    title: "SYSTEM GALLERY",
-    body: "Spend earned PP to unlock premium visual themes. Each template has unique colors, animations, and press sounds.",
-  },
-  PROFILE: {
-    title: "OPERATOR PROFILE",
-    body: "Track your full progression path, unlock narrative rewards, and review your complete discipline history.",
-  },
-  SYSTEM: {
-    title: "SYSTEM SETTINGS",
-    body: "Language selection, legal compliance, operator manual, and system configuration.",
-  },
-};
 
 const _tabBarSS = StyleSheet.create({
   bar: {
@@ -374,14 +318,16 @@ function TabBar({
   active,
   onPress,
   accent,
+  tabs,
 }: {
   active: AppTab;
   onPress: (t: AppTab) => void;
   accent: string;
+  tabs: { id: AppTab; label: string }[];
 }) {
   return (
     <View style={_tabBarSS.bar}>
-      {APP_TABS.map((tab) => (
+      {tabs.map((tab) => (
         <Pressable
           key={tab.id}
           style={_tabBarSS.item}
@@ -432,8 +378,13 @@ const _sectionSS = StyleSheet.create({
   },
 });
 
-function SectionIntro({ tab, accent }: { tab: AppTab; accent: string }) {
-  const intro = TAB_INTROS[tab];
+function SectionIntro({
+  intro,
+  accent,
+}: {
+  intro: { title: string; body: string };
+  accent: string;
+}) {
   return (
     <View style={[_sectionSS.box, { borderColor: `${accent}44` }]}>
       <Text style={[_sectionSS.title, { color: accent }]}>{intro.title}</Text>
@@ -825,6 +776,74 @@ export default function App() {
   const [showMonetization, setShowMonetization] = useState(false);
   const [onboardingSeen, setOnboardingSeen] = useState(false);
   const [language, setLanguage] = useState<SupportedLanguage>("en");
+  const translate = useCallback(
+    (key: string) => getLocalizedText(key, language),
+    [language],
+  );
+  const appTabs = useMemo(
+    () => [
+      { id: "PACT" as const, label: translate("tabPact") },
+      { id: "SQUAD" as const, label: translate("tabSquad") },
+      { id: "STORE" as const, label: translate("tabStore") },
+      { id: "PROFILE" as const, label: translate("tabProfile") },
+      { id: "SYSTEM" as const, label: translate("tabSystem") },
+    ],
+    [translate],
+  );
+  const tabIntros = useMemo(
+    () => ({
+      PACT: {
+        title: translate("introPactTitle"),
+        body: translate("introPactBody"),
+      },
+      SQUAD: {
+        title: translate("introSquadTitle"),
+        body: translate("introSquadBody"),
+      },
+      STORE: {
+        title: translate("introStoreTitle"),
+        body: translate("introStoreBody"),
+      },
+      PROFILE: {
+        title: translate("introProfileTitle"),
+        body: translate("introProfileBody"),
+      },
+      SYSTEM: {
+        title: translate("introSystemTitle"),
+        body: translate("introSystemBody"),
+      },
+    }),
+    [translate],
+  );
+  const pactMacros = useMemo(
+    () => [
+      {
+        label: translate("macroFocusLabel"),
+        value: translate("macroFocusValue"),
+        duration: 45,
+        stake: 20,
+      },
+      {
+        label: translate("macroRecoveryLabel"),
+        value: translate("macroRecoveryValue"),
+        duration: 30,
+        stake: 12,
+      },
+      {
+        label: translate("macroExecuteLabel"),
+        value: translate("macroExecuteValue"),
+        duration: 60,
+        stake: 30,
+      },
+      {
+        label: translate("macroResetLabel"),
+        value: translate("macroResetValue"),
+        duration: 15,
+        stake: 10,
+      },
+    ],
+    [translate],
+  );
   const [showOperatorManual, setShowOperatorManual] = useState(false);
   const [hasHydratedPersistence, setHasHydratedPersistence] = useState(false);
   const [showComplianceScreen, setShowComplianceScreen] = useState(false);
@@ -1507,8 +1526,11 @@ export default function App() {
     const hydrateLanguage = async () => {
       const stored = await getStoredLanguage();
       const persisted = await loadPersistedAppState();
+      const resolved = persisted?.language || stored;
+      await initializeI18n();
+      await setStoredLanguage(resolved);
       if (persisted) {
-        setLanguage(persisted.language || stored);
+        setLanguage(resolved);
         setOnboardingSeen(persisted.onboardingSeen);
         setSquads(
           persisted.squads.length > 0 ? persisted.squads : createSeedSquads(),
@@ -3287,7 +3309,7 @@ export default function App() {
             </Text>
           </View>
         )}
-        <TabBar active={activeTab} onPress={handleTabPress} accent={accent} />
+        <TabBar active={activeTab} onPress={handleTabPress} accent={accent} tabs={appTabs} />
         <View style={isWeb ? styles.webColumnsRow : styles.mobileColumnWrapper}>
           {isWeb && (
             <ScrollView
@@ -3622,7 +3644,7 @@ export default function App() {
               </View>
 
               {activeTab !== "PACT" && (
-                <SectionIntro tab={activeTab} accent={accent} />
+                <SectionIntro intro={tabIntros[activeTab]} accent={accent} />
               )}
               <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
                 <Animated.View
@@ -4257,7 +4279,7 @@ export default function App() {
                           },
                         ]}
                       >
-                        {pactFlowMode === "planning" ? "PLANNING" : "EXECUTION"}
+                        {pactFlowMode === "planning" ? translate("modePlanning") : translate("modeExecution")}
                       </Text>
                     </View>
                   </View>
@@ -4296,7 +4318,7 @@ export default function App() {
                       placeholderTextColor="rgba(244,244,245,0.32)"
                     />
                     <View style={styles.macroRow}>
-                      {PACT_MACROS.map((macro) => (
+                      {pactMacros.map((macro) => (
                         <Pressable
                           key={macro.label}
                           style={[
@@ -4330,7 +4352,7 @@ export default function App() {
                       style={[styles.buttonPrimary, { backgroundColor: accent, marginTop: 10 }]}
                       onPress={launchPactExecution}
                     >
-                      <Text style={styles.buttonText}>SUBMIT PACT</Text>
+                      <Text style={styles.buttonText}>{translate("buttonSubmitPact")}</Text>
                     </TemplatedPressable>
                   </AnimatedReanimated.View>
 
@@ -4349,7 +4371,7 @@ export default function App() {
                         setExecutionCountdown(5);
                       }}
                     >
-                      <Text style={[styles.buttonText, { color: accent }]}>ABORT</Text>
+                      <Text style={[styles.buttonText, { color: accent }]}>{translate("buttonAbort")}</Text>
                     </Pressable>
                   </AnimatedReanimated.View>
                 </View>
