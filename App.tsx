@@ -2,6 +2,7 @@ import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
+import * as Haptics from "expo-haptics";
 import React, {
   useCallback,
   useEffect,
@@ -24,6 +25,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import AnimatedReanimated, {
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 import AccessGate from "./src/components/AccessGate";
 import BootSequence from "./src/components/BootSequence";
 import BrandMark from "./src/components/BrandMark";
@@ -287,6 +292,12 @@ const evaluatePact = (text: string, contract?: PactContract) => {
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const PACT_MACROS = [
+  { label: "FOCUS", value: "Complete a focused 45-minute study sprint" },
+  { label: "RECOVERY", value: "Complete a high-quality recovery block and document the outcome" },
+  { label: "EXECUTE", value: "Deliver a measurable execution sprint with clear proof" },
+  { label: "RESET", value: "Reset the loop with a short, disciplined reset block" },
+] as const;
 
 // ── Navigation ───────────────────────────────────────────────────────────
 type AppTab = "PACT" | "SQUAD" | "STORE" | "PROFILE" | "SYSTEM";
@@ -843,6 +854,10 @@ export default function App() {
   // null = still checking AsyncStorage; false = show boot; true = skip boot
   const [bootReady, setBootReady] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("PACT");
+  const [pactFlowMode, setPactFlowMode] = useState<"planning" | "execution">(
+    "planning",
+  );
+  const [executionCountdown, setExecutionCountdown] = useState(5);
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [tutorialCompleted, setTutorialCompleted] = useState(false);
   const mainScrollRef = useRef<ScrollView>(null);
@@ -892,6 +907,42 @@ export default function App() {
   const heroFloat = useRef(new Animated.Value(0)).current;
   const templatePulse = useRef(new Animated.Value(0)).current;
   const templateSweep = useRef(new Animated.Value(0)).current;
+  const triggerPactFeedback = useCallback(
+    (kind: "impact" | "notify") => {
+      if (Platform.OS === "web") return;
+      if (kind === "notify") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+    },
+    [],
+  );
+  const planningPanelStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(pactFlowMode === "planning" ? 1 : 0, {
+      duration: 220,
+    }),
+    maxHeight: withTiming(pactFlowMode === "planning" ? 420 : 0, {
+      duration: 220,
+    }),
+    overflow: "hidden",
+    transform: [
+      {
+        scale: withTiming(pactFlowMode === "planning" ? 1 : 0.96, {
+          duration: 220,
+        }),
+      },
+    ],
+  }));
+  const executionPanelStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(pactFlowMode === "execution" ? 1 : 0, {
+      duration: 240,
+    }),
+    maxHeight: withTiming(pactFlowMode === "execution" ? 320 : 0, {
+      duration: 240,
+    }),
+    overflow: "hidden",
+  }));
   const [protocolArchetype, setProtocolArchetype] = useState(() =>
     deriveProtocolArchetype({
       pp: createInitialState().pp,
@@ -1704,6 +1755,46 @@ export default function App() {
     setAccessError(result.ok ? null : result.message);
     setStatusMessage(result.message);
   };
+
+  const launchPactExecution = useCallback(() => {
+    if (!hasRequiredComplianceConsent(complianceConsent)) {
+      appendLine(buildComplianceNotice(complianceConsent));
+      setStatusMessage("CONSENT REQUIRED");
+      return;
+    }
+
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      appendLine("> NO PACT INPUT DETECTED.");
+      return;
+    }
+
+    setExecutionCountdown(5);
+    setPactFlowMode("execution");
+    triggerPactFeedback("impact");
+  }, [appendLine, complianceConsent, draft, triggerPactFeedback]);
+
+  const finalizePactExecution = useCallback(async () => {
+    setPactFlowMode("planning");
+    setExecutionCountdown(5);
+    await submitPact();
+    triggerPactFeedback("notify");
+  }, [triggerPactFeedback]);
+
+  useEffect(() => {
+    if (pactFlowMode !== "execution") return;
+
+    if (executionCountdown <= 0) {
+      void finalizePactExecution();
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setExecutionCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [executionCountdown, finalizePactExecution, pactFlowMode]);
 
   const submitPact = async () => {
     if (!hasRequiredComplianceConsent(complianceConsent)) {
@@ -4111,440 +4202,139 @@ export default function App() {
               </View>
 
               <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
-                
-                {/* ── CURRENTLY ACTIVE CONTRACT CARD ─────────────────────── */}
-                {state.activeContractTask ? (
-                  <View style={[styles.panel, { borderColor: accent, backgroundColor: "rgba(0, 255, 0, 0.08)", marginBottom: 12 }]}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-                      <Text style={[styles.panelTitle, { color: accent, marginBottom: 0 }]}>
-                        [ CURRENTLY ACTIVE CONTRACT ]
-                      </Text>
-                      <Text style={{ color: accent, fontFamily: "monospace", fontSize: 11, fontWeight: "700" }}>
-                        {missionCountdown}
-                      </Text>
-                    </View>
-
-                    <Text style={{ color: "#F4F4F5", fontFamily: "monospace", fontSize: 14, fontWeight: "700", marginBottom: 6 }}>
-                      ▶ {state.activeContractTask}
+                <View style={[styles.panel, { borderColor: `${accent}33` }]}>
+                  <View style={styles.panelHeaderRow}>
+                    <Text style={[styles.panelTitle, { color: accent }]}>
+                      [ TACTICAL UPLINK ]
                     </Text>
-
-                    <View style={{ flexDirection: "row", gap: 12 }}>
-                      <Text style={{ color: "#C0C0C8", fontFamily: "monospace", fontSize: 11 }}>
-                        STAKE: <Text style={{ color: accent, fontWeight: "700" }}>{state.activeContractStake ?? 0} PP</Text>
-                      </Text>
-                      <Text style={{ color: "#C0C0C8", fontFamily: "monospace", fontSize: 11 }}>
-                        STATUS: <Text style={{ color: accent, fontWeight: "700" }}>IN PROGRESS</Text>
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
-
-                <View style={[styles.panel, { borderColor: accent }]}>
-                  <Text style={[styles.panelTitle, { color: accent }]}>
-                    [ TACTICAL UPLINK ]
-                  </Text>
-                  <Text style={styles.storeTitle}>Mission Node</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      { borderColor: accent, marginBottom: 8 },
-                    ]}
-                    value={contractTask}
-                    onChangeText={setContractTask}
-                    placeholder="What must be done?"
-                    placeholderTextColor="rgba(244,244,245,0.32)"
-                  />
-                  <Text style={styles.storeTitle}>Duration (minutes)</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      { borderColor: accent, marginBottom: 8 },
-                    ]}
-                    value={contractDuration}
-                    onChangeText={setContractDuration}
-                    placeholder="45"
-                    keyboardType="numeric"
-                    placeholderTextColor="rgba(244,244,245,0.32)"
-                  />
-                  <Text style={styles.storeTitle}>Risk Stake (PP)</Text>
-                  <TextInput
-                    style={[styles.input, { borderColor: accent }]}
-                    value={contractStake}
-                    onChangeText={setContractStake}
-                    placeholder="20"
-                    keyboardType="numeric"
-                    placeholderTextColor="rgba(244,244,245,0.32)"
-                  />
-                </View>
-
-                <View style={styles.buttonRow}>
-                  <TemplatedPressable
-                    templateId={selectedDesignTemplateId}
-                    style={[styles.buttonPrimary, { backgroundColor: accent }]}
-                    onPress={submitPact}
-                  >
-                    <Text style={styles.buttonText}>
-                      {getLocalizedText("submitPact", language)}
-                    </Text>
-                  </TemplatedPressable>
-                  <TemplatedPressable
-                    templateId={selectedDesignTemplateId}
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={toggleOffline}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      {state.offline ? "DISABLE OFFLINE" : "ENABLE OFFLINE"}
-                    </Text>
-                  </TemplatedPressable>
-                </View>
-
-                <View style={styles.buttonRow}>
-                  <TemplatedPressable
-                    templateId={selectedDesignTemplateId}
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={loadMissionIntoContract}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      LOAD MISSION
-                    </Text>
-                  </TemplatedPressable>
-                  <TemplatedPressable
-                    templateId={selectedDesignTemplateId}
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={toggleOperatorManual}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      {getLocalizedText("manual", language)}
-                    </Text>
-                  </TemplatedPressable>
-                </View>
-
-                <View style={styles.buttonRow}>
-                  <Pressable
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={toggleRecording}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      {isRecording ? "STOP VOICE" : "RECORD VOICE"}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={syncQueue}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      {getLocalizedText("syncQueue", language)} ({queueCount})
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View style={styles.buttonRow}>
-                  <Pressable
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={toggleMonetization}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      {getLocalizedText("terminalUpgrades", language)}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.buttonSecondary, { borderColor: accent }]}
-                    onPress={overclockMission}
-                  >
-                    <Text style={[styles.buttonText, { color: accent }]}>
-                      [ OVERCLOCK (+1H) // 15 PP ]
-                    </Text>
-                  </Pressable>
-                </View>
-
-                {state.redState ? (
-                  <View style={styles.buttonRow}>
-                    <TemplatedPressable
-                      templateId={selectedDesignTemplateId}
-                      style={[
-                        styles.buttonSecondary,
-                        {
-                          borderColor:
-                            recoveryVisualState.isRecoveryVisualActive
-                              ? "#7FE7C9"
-                              : CRIMSON,
-                          backgroundColor:
-                            recoveryVisualState.isRecoveryVisualActive
-                              ? "rgba(127, 231, 201, 0.14)"
-                              : "rgba(0, 0, 0, 0.52)",
-                        },
-                      ]}
-                      onPress={stabilizeRedFlash}
-                      disabled={
-                        !stabilizationUsage.canUse ||
-                        (!eliteOverrideActive && state.pp < stabilizationCost)
-                      }
-                    >
+                    <View style={[styles.modePill, { borderColor: `${accent}55` }]}>
                       <Text
                         style={[
-                          styles.buttonText,
+                          styles.modePillText,
                           {
-                            color: recoveryVisualState.isRecoveryVisualActive
-                              ? "#7FE7C9"
-                              : CRIMSON,
+                            color:
+                              pactFlowMode === "planning" ? accent : AMBER,
                           },
                         ]}
                       >
-                        {recoveryButtonLabel}
+                        {pactFlowMode === "planning" ? "PLANNING" : "EXECUTION"}
                       </Text>
-                    </TemplatedPressable>
+                    </View>
                   </View>
-                ) : null}
-                
-                <View style={[styles.panel, { borderColor: accent }]}>
-                  <View style={styles.logBox}>
-                    {state.terminalLines.map((line, index) => (
-                      <Text
-                        key={`${line}-${index}`}
-                        style={[styles.logLine, { color: accent }]}
-                      >
-                        {line}
-                      </Text>
-                    ))}
-                  </View>
-                </View>
 
-                <View style={styles.inputRow}>
-                  <TextInput
-                    style={[styles.input, { borderColor: accent }]}
-                    value={draft}
-                    onChangeText={setDraft}
-                    placeholder="Record the completed task..."
-                    placeholderTextColor="rgba(244,244,245,0.32)"
-                    multiline
-                  />
-                  <View style={styles.inputHelperRow}>
-                    <Text style={styles.inputHint}>
-                      {getLocalizedText("sampleHint", language)}
-                    </Text>
-                    <Pressable
+                  <AnimatedReanimated.View style={planningPanelStyle}>
+                    <Text style={styles.storeTitle}>Mission node</Text>
+                    <TextInput
                       style={[
-                        styles.inputHelperButton,
-                        { borderColor: accent },
+                        styles.input,
+                        { borderColor: accent, marginBottom: 8 },
                       ]}
-                      onPress={loadSampleDraft}
-                    >
-                      <Text
-                        style={[
-                          styles.inputHelperButtonText,
-                          { color: accent },
-                        ]}
-                      >
-                        {getLocalizedText("loadSample", language)}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-
-                <View style={styles.buttonRow}>
-                  <Pressable
-                    style={[styles.buttonSecondary, { borderColor: CRIMSON }]}
-                    onPress={lockTerminal}
-                  >
-                    <Text style={[styles.buttonText, { color: CRIMSON }]}>
-                      {getLocalizedText("lockTerminal", language)}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <MonetizationPanel
-                  visible={showMonetization}
-                  accent={accent}
-                  plan={effectivePlan}
-                />
-
-                <View
-                  style={[
-                    styles.panel,
-                    styles.statusPanel,
-                    { borderColor: accent },
-                  ]}
-                >
-                  <Text style={[styles.panelTitle, { color: accent }]}>
-                    [ {getLocalizedText("statusLabel", language)} ]
-                  </Text>
-                  <Text style={styles.storeTitle}>{statusMessage}</Text>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    {getLocalizedText("languageLabel", language)}:{" "}
-                    {
-                      getSupportedLanguages().find(
-                        (option) => option.code === language,
-                      )?.label
-                    }
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    PLAN: {planStatusLabel}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    RECOVERY WINDOWS: {stabilizationUsage.remaining}/
-                    {DAILY_STABILIZATION_LIMIT} TODAY
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: CRIMSON, marginTop: 6 },
-                    ]}
-                  >
-                    {disciplineBanner}
-                  </Text>
-                  <Text
-                    style={[styles.storeTitle, { color: accent, marginTop: 6 }]}
-                  >
-                    [ MISSION TIMER: {missionCountdown} REMAINING ]
-                  </Text>
-                  <Text
-                    style={[styles.storeTitle, { color: accent, marginTop: 6 }]}
-                  >
-                    [ ACTIVE MISSION: {state.missionTitle} ]
-                  </Text>
-                  <Text style={styles.storeTitle}>
-                    {state.missionDescription}
-                  </Text>
-                  <View style={styles.insightBox}>
-                    <Text
+                      value={contractTask}
+                      onChangeText={setContractTask}
+                      placeholder="What must be done?"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Text style={styles.storeTitle}>Duration (minutes)</Text>
+                    <TextInput
                       style={[
-                        styles.panelTitle,
-                        { color: accent, marginBottom: 4 },
+                        styles.input,
+                        { borderColor: accent, marginBottom: 8 },
                       ]}
-                    >
-                      [ {getLocalizedText("operatorInsight", language)} ]
-                    </Text>
-                    <Text style={styles.storeTitle}>
-                      {operatorInsight.title}
-                    </Text>
-                    <Text style={[styles.storeStatus, { marginTop: 4 }]}>
-                      {operatorInsight.body}
-                    </Text>
-                  </View>
-                  <View style={styles.guidanceBox}>
-                    <Text
-                      style={[
-                        styles.panelTitle,
-                        { color: accent, marginBottom: 4 },
-                      ]}
-                    >
-                      [ {getLocalizedText("guidance", language)} ]
-                    </Text>
-                    <Text style={styles.storeTitle}>
-                      {missionGuidance.title}
-                    </Text>
-                    <Text style={[styles.storeStatus, { marginTop: 4 }]}>
-                      {missionGuidance.body}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.storeStatus,
-                        { color: accent, marginTop: 6 },
-                      ]}
-                    >
-                      NEXT ACTION: {missionGuidance.nextAction}
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    RISK: {state.missionRisk} • BONUS: +
-                    {state.missionRewardBonus} PP • WINDOW:{" "}
-                    {state.missionTimeWindowMinutes}m
-                  </Text>
-                  <Text style={styles.storeTitle}>
-                    SUGGESTED CONTRACT: {state.missionContractTemplate}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    RECOMMENDED STAKE: {state.missionRecommendedStake} PP
-                  </Text>
-                  {state.activeGlitch ? (
-                    <Text
-                      style={[
-                        styles.storeStatus,
-                        { color: CRIMSON, marginTop: 6 },
-                      ]}
-                    >
-                      GLITCH: {state.activeGlitch}
-                    </Text>
-                  ) : null}
-                  <Text style={[styles.panelTitle, { color: accent }]}>
-                    [ CAPTAINS OVERSEER ]
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeTitle,
-                      { color: accent, marginBottom: 6 },
-                    ]}
-                  >
-                    PROTOCOL: {state.protocolArchetypeName}
-                  </Text>
-                  <Text style={styles.storeTitle}>
-                    {state.protocolArchetypeDescription}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    STATUS EFFECT: {state.protocolStatusEffect}
-                  </Text>
-                  {statusEffectTags.length > 0 ? (
-                    <View style={styles.statusTagRow}>
-                      {statusEffectTags.map((tag) => (
-                        <View key={tag.label} style={styles.statusTag}>
-                          <Text style={styles.statusTagText}>{tag.label}</Text>
-                        </View>
+                      value={contractDuration}
+                      onChangeText={setContractDuration}
+                      placeholder="45"
+                      keyboardType="numeric"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <Text style={styles.storeTitle}>Risk stake (PP)</Text>
+                    <TextInput
+                      style={[styles.input, { borderColor: accent }]}
+                      value={contractStake}
+                      onChangeText={setContractStake}
+                      placeholder="20"
+                      keyboardType="numeric"
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                    />
+                    <View style={styles.macroRow}>
+                      {PACT_MACROS.map((macro) => (
+                        <Pressable
+                          key={macro.label}
+                          style={[
+                            styles.macroChip,
+                            { borderColor: accent },
+                          ]}
+                          onPress={() => setContractTask(macro.value)}
+                        >
+                          <Text
+                            style={[styles.macroChipText, { color: accent }]}
+                          >
+                            [{macro.label}]
+                          </Text>
+                        </Pressable>
                       ))}
                     </View>
-                  ) : null}
-                  {state.overseerLines.map((line, index) => (
-                    <Text
-                      key={`${line}-${index}`}
-                      style={[styles.logLine, { color: accent }]}
+                    <TextInput
+                      style={[styles.input, { borderColor: accent, marginTop: 2 }]}
+                      value={draft}
+                      onChangeText={setDraft}
+                      placeholder="Record the completed proof..."
+                      placeholderTextColor="rgba(244,244,245,0.32)"
+                      multiline
+                    />
+                    <TemplatedPressable
+                      templateId={selectedDesignTemplateId}
+                      style={[styles.buttonPrimary, { backgroundColor: accent, marginTop: 10 }]}
+                      onPress={launchPactExecution}
                     >
-                      {line}
+                      <Text style={styles.buttonText}>SUBMIT PACT</Text>
+                    </TemplatedPressable>
+                  </AnimatedReanimated.View>
+
+                  <AnimatedReanimated.View style={executionPanelStyle}>
+                    <Text style={styles.executionLabel}>TIME TO LOCK</Text>
+                    <Text style={[styles.executionDial, { color: accent }]}>
+                      {executionCountdown}
                     </Text>
-                  ))}
+                    <Text style={styles.executionHint}>
+                      The system is preparing your contract for the verification gate.
+                    </Text>
+                    <Pressable
+                      style={[styles.buttonSecondary, { borderColor: accent, marginTop: 12 }]}
+                      onPress={() => {
+                        setPactFlowMode("planning");
+                        setExecutionCountdown(5);
+                      }}
+                    >
+                      <Text style={[styles.buttonText, { color: accent }]}>ABORT</Text>
+                    </Pressable>
+                  </AnimatedReanimated.View>
                 </View>
 
-                {showOperatorManual ? (
-                  <View style={[styles.panel, { borderColor: accent }]}>
-                    <Text style={[styles.panelTitle, { color: accent }]}>
-                      [ OPERATOR MANUAL ]
-                    </Text>
-                    {operatorManualEntries.map((entry) => (
-                      <View key={entry.title} style={styles.manualEntry}>
-                        <Text style={styles.storeTitle}>{entry.title}</Text>
-                        <Text style={styles.storeStatus}>{entry.body}</Text>
-                      </View>
-                    ))}
+                <View style={[styles.panel, { borderColor: `${accent}33` }]}> 
+                  <Text style={[styles.panelTitle, { color: accent }]}>
+                    [ FIELD BRIEFING ]
+                  </Text>
+                  <View style={styles.briefingRow}>
+                    <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
+                      <Text style={styles.briefingMetricLabel}>ACTIVE MISSION</Text>
+                      <Text style={styles.briefingMetricValue}>{state.missionTitle}</Text>
+                    </View>
+                    <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
+                      <Text style={styles.briefingMetricLabel}>MISSION CLOCK</Text>
+                      <Text style={styles.briefingMetricValue}>{missionCountdown}</Text>
+                    </View>
                   </View>
-                ) : null}
+                  <View style={styles.briefingRow}>
+                    <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
+                      <Text style={styles.briefingMetricLabel}>RISK</Text>
+                      <Text style={styles.briefingMetricValue}>{state.missionRisk}</Text>
+                    </View>
+                    <View style={[styles.briefingMetric, { borderColor: `${accent}33` }]}> 
+                      <Text style={styles.briefingMetricLabel}>REWARD</Text>
+                      <Text style={styles.briefingMetricValue}>+{state.missionRewardBonus} PP</Text>
+                    </View>
+                  </View>
+                </View>
               </View>
 
               <View
@@ -5528,6 +5318,87 @@ const styles = StyleSheet.create({
   keyboardShell: {
     flex: 1,
     backgroundColor: "#030711",
+  },
+  panelHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  modePill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  modePillText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.6,
+  },
+  macroRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  macroChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  macroChipText: {
+    fontFamily: "monospace",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+  executionLabel: {
+    color: "rgba(244,244,245,0.68)",
+    fontFamily: "monospace",
+    fontSize: 11,
+    letterSpacing: 2.4,
+  },
+  executionDial: {
+    fontFamily: "monospace",
+    fontSize: 72,
+    fontWeight: "700",
+    letterSpacing: 2,
+    marginVertical: 8,
+  },
+  executionHint: {
+    color: "rgba(244,244,245,0.72)",
+    fontFamily: "monospace",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  briefingRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  briefingMetric: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  briefingMetricLabel: {
+    color: "rgba(244,244,245,0.62)",
+    fontFamily: "monospace",
+    fontSize: 9,
+    letterSpacing: 1.4,
+    marginBottom: 4,
+  },
+  briefingMetricValue: {
+    color: "#F4F4F5",
+    fontFamily: "monospace",
+    fontSize: 12,
+    fontWeight: "700",
   },
   authBootShell: {
     flex: 1,

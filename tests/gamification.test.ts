@@ -1,5 +1,14 @@
 // PeakPact Gamification Core Engine - Full 1-99 Progression & Conversion Verification
 
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+
+const expect = (actual: unknown) => ({
+  toBe(expected: unknown) {
+    assert.strictEqual(actual, expected);
+  },
+});
+
 const calculateLevelFromXP = (xp: number): { level: number; currentLevelXP: number; nextLevelXP: number } => {
   let level = 1;
   let remainingXP = xp;

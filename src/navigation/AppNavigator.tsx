@@ -17,15 +17,11 @@ export default function AppNavigator() {
         screenOptions={{
           headerStyle: {
             backgroundColor: 'rgba(2, 6, 14, 0.96)',
-            shadowColor: 'transparent',
-            borderBottomWidth: 1,
-            borderBottomColor: 'rgba(111, 255, 138, 0.16)',
-          },
+          } as any,
           headerTintColor: '#f3fff1',
           headerTitleStyle: {
             color: '#f3fff1',
             fontWeight: '700',
-            letterSpacing: 1.2,
             fontSize: 15,
           },
           contentStyle: {
