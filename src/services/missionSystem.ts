@@ -48,13 +48,13 @@ export function getDisciplineBanner(context: Record<string, unknown>, language: 
 export function getFirstSessionGuide(language: string) {
   return {
     title: "FIRST SESSION GUIDE",
-    body: "Welcome operator. Start with a minimal pact and learn the loop.",
+    body: "Welcome operator. Start with one small task and learn the loop in three quick steps.",
     steps: [
-      { title: "Set a task", body: "Choose something achievable." },
-      { title: "Submit", body: "Send the pact for verification." },
-      { title: "Review", body: "Check your rewards and status." },
+      { title: "Choose a task", body: "Pick something realistic you can finish today." },
+      { title: "Submit it", body: "Send your pact for review and earn progress." },
+      { title: "Review the result", body: "See your reward, status, and next step." },
     ],
-    primaryAction: "START YOUR FIRST PACT",
+    primaryAction: "START YOUR FIRST MISSION",
   };
 }
 

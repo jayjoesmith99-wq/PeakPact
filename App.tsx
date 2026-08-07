@@ -3228,7 +3228,7 @@ export default function App() {
       {!onboardingSeen ? (
         <View style={styles.onboardingOverlay}>
           <View style={styles.onboardingCard}>
-            <Text style={styles.onboardingLabel}>[ GHOST IN THE MACHINE ]</Text>
+            <Text style={styles.onboardingLabel}>[ WELCOME OPERATOR ]</Text>
             <Text style={styles.onboardingTitle}>
               {firstSessionGuide.title}
             </Text>
@@ -3242,7 +3242,7 @@ export default function App() {
             </View>
             <View style={[styles.onboardingActionRow, { borderColor: accent }]}>
               <Text style={[styles.onboardingActionLabel, { color: accent }]}>
-                NEXT ACTION
+                YOUR FIRST STEP
               </Text>
               <Text style={styles.onboardingActionValue}>
                 {firstSessionGuide.primaryAction}
