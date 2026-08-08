@@ -28,6 +28,25 @@ export default function ProfileScreen() {
           <Text style={styles.cardValue}>{getLocalizedText('profileMembershipValue')}</Text>
           <Text style={styles.cardNote}>{getLocalizedText('profileMembershipNote')}</Text>
         </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>OPERATOR DOSSIER</Text>
+          <Text style={styles.cardNote}>Comprehensive discipline telemetry and career stats.</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>LEVEL</Text>
+              <Text style={styles.statValue}>3</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>STREAK</Text>
+              <Text style={styles.statValue}>6</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>XP</Text>
+              <Text style={styles.statValue}>1500</Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -80,5 +99,32 @@ const styles = StyleSheet.create({
     color: '#6F6F6F',
     fontSize: 13,
     lineHeight: 20,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#181818',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  statLabel: {
+    color: '#808080',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  statValue: {
+    color: '#76FF03',
+    fontSize: 18,
+    fontWeight: '900',
   },
 });
