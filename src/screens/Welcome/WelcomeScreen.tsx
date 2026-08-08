@@ -20,7 +20,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getLocalizedText } from '../../i18n';
 import { getWelcomePromptHighlights } from '../../services/welcomePrompt';
 
-const welcomeVideo = require('../../../assets/9e977029180a9977b941d4d9561753b0.mp4');
+// ✅ UPDATED: Pointing to the newly generated premium cinematic video
+const welcomeVideo = require('../../../assets/cinematic-boot.mp4');
 const logo = require('../../../assets/logo.peakpact.png');
 
 type RootStackParamList = {

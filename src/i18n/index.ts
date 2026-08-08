@@ -1,27 +1,37 @@
-import i18next from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18n from "i18next";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type AsyncStorageLike = {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-};
+const LANGUAGE_KEY = "@peakpact/stored-language";
 
-type LocalizationLike = {
-  getLocales?: () => Array<{ languageCode?: string | null }>;
-  locale?: string;
-};
-
-async function getAsyncStorage(): Promise<AsyncStorageLike | null> {
+export async function initializeI18n(): Promise<void> {
+  if (i18n.isInitialized) return;
+  
   try {
-    const storage = await import('@react-native-async-storage/async-storage');
-    return (storage.default ?? null) as AsyncStorageLike | null;
-  } catch {
-    return null;
+    await i18n.init({
+      compatibilityJSON: "v4",
+      fallbackLng: "en",
+      resources: {
+        en: { translation: require("./locales/en.json") },
+      },
+      interpolation: { escapeValue: false },
+    });
+  } catch (e) {
+    console.warn("i18n init warning:", e);
   }
 }
 
-async function getLocalization(): Promise<LocalizationLike | null> {
+export async function getStoredLanguage(): Promise<string> {
   try {
+    const stored = await AsyncStorage.getItem(LANGUAGE_KEY);
+    return stored || "en";
+  } catch {
+    return "en";
+  }
+}
+
+export async function setStoredLanguage(lng: string): Promise<void> {
+  try {
+<<<<<<< Updated upstream
     return (await import('expo-localization')) as LocalizationLike;
   } catch {
     return null;
@@ -1153,52 +1163,27 @@ export async function getStoredLanguage(): Promise<SupportedLanguage> {
     const stored = await storage?.getItem(storageKey);
     if (stored) {
       return resolveLanguage(stored);
+=======
+    await AsyncStorage.setItem(LANGUAGE_KEY, lng);
+    
+    if (!i18n.isInitialized) {
+      await initializeI18n();
+>>>>>>> Stashed changes
     }
-  } catch {
-    // ignore storage errors and fall back to device language
+
+    const resources = i18n.services?.resourceStore?.data || { en: {} };
+    const supportedLangs = Object.keys(resources);
+    const targetLng = supportedLangs.includes(lng) ? lng : "en";
+
+    if (i18n.language !== targetLng && typeof i18n.changeLanguage === "function") {
+      await i18n.changeLanguage(targetLng);
+    }
+  } catch (error) {
+    console.warn("Failed to set stored language:", error);
   }
-
-  try {
-    const localization = await getLocalization();
-    const locales = localization?.getLocales?.();
-    const deviceLocale = locales?.[0]?.languageCode ?? localization?.locale ?? 'en';
-    return resolveLanguage(deviceLocale);
-  } catch {
-    return 'en';
-  }
 }
 
-export async function setStoredLanguage(language: SupportedLanguage) {
-  const storage = await getAsyncStorage();
-  await storage?.setItem(storageKey, language);
-  await i18next.changeLanguage(language);
-}
-
-export function getSupportedLanguages(): SupportedLanguageOption[] {
-  return supportedLanguageEntries;
-}
-
-export function getLocalizedText(key: TranslationKey | string, language?: SupportedLanguage | string) {
-  const resolvedLanguage = resolveLanguage(language ?? i18next.language ?? 'en');
-  const translation = resources[resolvedLanguage]?.translation?.[key as TranslationKey];
-  if (translation) {
-    return translation;
-  }
-  const fallback = resources.en.translation[key as TranslationKey];
-  return fallback ?? key;
-}
-
-export const i18n = i18next.createInstance();
-
-void i18n.use(initReactI18next).init({
-  resources: resources as never,
-  lng: 'en',
-  fallbackLng: 'en',
-  interpolation: { escapeValue: false },
-});
-
-export async function initializeI18n() {
-  const detected = await getStoredLanguage();
-  await i18n.changeLanguage(detected);
-  return detected;
+export function getLocalizedText(key: string, lng?: any): string {
+  const i18nInst = require('i18next').default || require('i18next');
+  return i18nInst.isInitialized && typeof i18nInst.t === 'function' ? (i18nInst.t(key, { lng: lng || i18nInst.language }) || key) : key;
 }
