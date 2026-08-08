@@ -1,12 +1,9 @@
-<<<<<<< Updated upstream
-=======
 // ────────────────────────────────────────────────────────────────────────────
 // PEAKPACT OS — PRODUCTION SYSTEM ARCHITECTURE (APPLE / LINEAR DESIGN SYSTEM)
 // ────────────────────────────────────────────────────────────────────────────
 
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
->>>>>>> Stashed changes
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
@@ -116,20 +113,6 @@ import {
 import { initializeI18n } from "./src/i18n";
 import { getTutorialSteps } from "./src/services/tutorialService";
 import {
-<<<<<<< Updated upstream
-  getEntitlementStatus,
-  initializePurchases,
-  restorePurchases,
-} from "./src/services/purchasesService";
-import {
-  getRecoveryVisualState,
-  isRedFlashActive,
-  shouldPulseRedFlash,
-} from "./src/services/flashState";
-import {
-  assignCaptainTask,
-=======
->>>>>>> Stashed changes
   createSeedSquads,
   createSquad,
   joinSquad,
@@ -137,19 +120,10 @@ import {
   sendSquadMessage,
   type Squad,
 } from "./src/services/squadSystem";
-<<<<<<< Updated upstream
-import { loadPersistedAppState, savePersistedAppState } from "./src/services/appStateStorage";
-import { MissionPanel } from "./src/features/missions/MissionPanel";
-import { ProfilePanel } from "./src/features/profile/ProfilePanel";
-import { CompliancePanel } from "./src/features/compliance/CompliancePanel";
-import { PreLoginExperience } from "./src/features/onboarding/PreLoginExperience";
-import { WelcomeCinematic } from "./src/features/onboarding/WelcomeCinematic";
-=======
 import {
   loadPersistedAppState,
   savePersistedAppState,
 } from "./src/services/appStateStorage";
->>>>>>> Stashed changes
 import {
   getDailyChallenge,
 } from "./src/services/eliteLoop";
@@ -469,11 +443,11 @@ function TutorialOverlay({
       <View style={_tutSS.card}>
         <View style={_tutSS.topRow}>
           <Text style={_tutSS.stepCt}>
-            {getLocalizedText("tutorialStepLabel", language as any)} {step + 1} / {steps.length}
+            {getLocalizedText("tutorialStepLabel", language)} {step + 1} / {steps.length}
           </Text>
           <Pressable onPress={onSkip}>
             <Text style={_tutSS.skip}>
-              {getLocalizedText("tutorialSkipLabel", language as any)}
+              {getLocalizedText("tutorialSkipLabel", language)}
             </Text>
           </Pressable>
         </View>
@@ -496,7 +470,7 @@ function TutorialOverlay({
         <View style={_tutSS.actions}>
           {step > 0 ? (
             <Pressable style={_tutSS.btnBack} onPress={onPrev}>
-               <Text style={_tutSS.btnBkTxt}>{getLocalizedText("tutorialBackLabel", language as any)}</Text>
+               <Text style={_tutSS.btnBkTxt}>{getLocalizedText("tutorialBackLabel", language)}</Text>
             </Pressable>
           ) : <View style={{flex: 1}} />}
           <Pressable
@@ -504,7 +478,7 @@ function TutorialOverlay({
             onPress={onNext}
           >
             <Text style={_tutSS.btnNxTxt}>
-              {step === steps.length - 1 ? getLocalizedText("tutorialCompleteLabel", language as any) : getLocalizedText("tutorialNextLabel", language as any)}
+              {step === steps.length - 1 ? getLocalizedText("tutorialCompleteLabel", language) : getLocalizedText("tutorialNextLabel", language)}
             </Text>
           </Pressable>
         </View>
@@ -518,8 +492,6 @@ export default function App() {
   const [state, setState] = useState<AppState>(createInitialState);
   const [authBooting, setAuthBooting] = useState(true);
   const [accessGranted, setAccessGranted] = useState(false);
-  const [preLoginReady, setPreLoginReady] = useState(false);
-  const [showCinematic, setShowCinematic] = useState(true);
   const [accessMode, setAccessMode] = useState<AccessMode>("SIGN_IN");
   const [accessForm, setAccessForm] = useState<AccessFormState>({
     codename: "",
@@ -539,13 +511,9 @@ export default function App() {
   const [showMonetization, setShowMonetization] = useState(false);
   const [onboardingSeen, setOnboardingSeen] = useState(false);
   const [language, setLanguage] = useState<SupportedLanguage>("en");
-<<<<<<< Updated upstream
-  const [i18nReady, setI18nReady] = useState(false);
-=======
   
->>>>>>> Stashed changes
   const translate = useCallback(
-    (key: string) => getLocalizedText(key, language as any),
+    (key: string) => getLocalizedText(key, language),
     [language],
   );
 
@@ -700,42 +668,7 @@ export default function App() {
     }
   };
 
-  const handleLeaveSquadPrompt = () => {
-    if (!activeSquadId) return;
-    setLeaveSquadConfirmOpen(true);
-  };
-
-  const confirmLeaveSquad = () => {
-    if (!activeSquadId) return;
-    const result = leaveSquad(
-      squads,
-      activeSquadId,
-      operatorCodename,
-      effectivePlan,
-      state.pp,
-    );
-    if (result.error || !result.squad) {
-      setStatusMessage(result.error?.toUpperCase() ?? "LEAVE FAILED");
-      setLeaveSquadConfirmOpen(false);
-      return;
-    }
-    setSquads([...squads]);
-    setActiveSquadId(null);
-    setState((prev) => ({ ...prev, pp: result.remainingPP }));
-    setLeaveSquadConfirmOpen(false);
-    setStatusMessage(`CREW LEFT // ${result.feePP} PP FEE`);
-  };
-
-  const cancelLeaveSquad = () => {
-    setLeaveSquadConfirmOpen(false);
-  };
-
   useEffect(() => {
-<<<<<<< Updated upstream
-    void initializePurchases();
-    void restorePurchases();
-    void getEntitlementStatus();
-=======
     const setupRevenueCat = async () => {
       try {
         Purchases.setLogLevel(LOG_LEVEL.DEBUG);
@@ -747,7 +680,6 @@ export default function App() {
       }
     };
     setupRevenueCat();
->>>>>>> Stashed changes
   }, []);
 
   useEffect(() => {
@@ -779,13 +711,7 @@ export default function App() {
 
       const session = await restoreOperatorSession();
       if (session?.user) {
-<<<<<<< Updated upstream
-        setOperatorCodename(
-          extractOperatorCodename(session.user, session.user.email ?? undefined),
-        );
-=======
         setOperatorCodename(extractOperatorCodename(session.user, session.user.email));
->>>>>>> Stashed changes
         setAccessForm((prev) => ({
           ...prev,
           email: session.user?.email ?? prev.email,
@@ -802,13 +728,7 @@ export default function App() {
     const subscription = subscribeToAuthState((_event, session) => {
       if (session?.user) {
         setAccessGranted(true);
-<<<<<<< Updated upstream
-        setOperatorCodename(
-          extractOperatorCodename(session.user, session.user.email ?? undefined),
-        );
-=======
         setOperatorCodename(extractOperatorCodename(session.user, session.user.email));
->>>>>>> Stashed changes
         setAccessForm((prev) => ({
           ...prev,
           email: session.user?.email ?? prev.email,
@@ -1027,64 +947,24 @@ export default function App() {
 
   useEffect(() => {
     const hydrateLanguage = async () => {
-      try {
-        const stored = await getStoredLanguage();
-        const persisted = await loadPersistedAppState();
-<<<<<<< Updated upstream
-        const resolved = persisted?.language || stored;
-        await initializeI18n();
-        await setStoredLanguage(resolved);
-        if (persisted) {
-          setLanguage(resolved);
-          setOnboardingSeen(persisted.onboardingSeen);
-          setSquads(
-            persisted.squads.length > 0 ? persisted.squads : createSeedSquads(),
-          );
-          setActiveSquadId(persisted.activeSquadId);
-          setOwnedDesignTemplates(
-            persisted.ownedDesignTemplates.length > 0
-              ? persisted.ownedDesignTemplates
-              : ["core"],
-          );
-          setSelectedDesignTemplateId(
-            persisted.selectedDesignTemplateId ?? "core",
-          );
-        } else {
-          setLanguage(stored);
-        }
-        setI18nReady(true);
-        setHasHydratedPersistence(true);
-      } catch {
-        await setStoredLanguage('en');
-        setLanguage('en');
-        setI18nReady(true);
-=======
-        const resolved = persisted?.language || stored || "en";
-        await initializeI18n();
-        try {
-          await setStoredLanguage(resolved);
-        } catch {
-          await setStoredLanguage("en");
-        }
-        if (persisted) {
-          setLanguage(resolved as SupportedLanguage);
-          setOnboardingSeen(persisted.onboardingSeen);
-          setSquads(persisted.squads.length > 0 ? persisted.squads : createSeedSquads());
-          setActiveSquadId(persisted.activeSquadId);
-          setOwnedDesignTemplates(
-            persisted.ownedDesignTemplates.length > 0 ? persisted.ownedDesignTemplates : ["core"],
-          );
-          setSelectedDesignTemplateId(persisted.selectedDesignTemplateId ?? "core");
-        } else {
-          setLanguage((stored || "en") as SupportedLanguage);
-        }
-      } catch (error) {
-        console.error("Hydrate Language Error:", error);
-        setLanguage("en");
-      } finally {
->>>>>>> Stashed changes
-        setHasHydratedPersistence(true);
+      const stored = await getStoredLanguage();
+      const persisted = await loadPersistedAppState();
+      const resolved = persisted?.language || stored;
+      await initializeI18n();
+      await setStoredLanguage(resolved);
+      if (persisted) {
+        setLanguage(resolved);
+        setOnboardingSeen(persisted.onboardingSeen);
+        setSquads(persisted.squads.length > 0 ? persisted.squads : createSeedSquads());
+        setActiveSquadId(persisted.activeSquadId);
+        setOwnedDesignTemplates(
+          persisted.ownedDesignTemplates.length > 0 ? persisted.ownedDesignTemplates : ["core"],
+        );
+        setSelectedDesignTemplateId(persisted.selectedDesignTemplateId ?? "core");
+      } else {
+        setLanguage(stored);
       }
+      setHasHydratedPersistence(true);
     };
     void hydrateLanguage();
   }, []);
@@ -1708,11 +1588,7 @@ export default function App() {
 
   const changeLanguage = async (nextLanguage: SupportedLanguage) => {
     setLanguage(nextLanguage);
-    try {
-      await setStoredLanguage(nextLanguage);
-    } catch (e) {
-      console.warn("Language change fallback:", e);
-    }
+    await setStoredLanguage(nextLanguage);
     await savePersistedAppState({
       onboardingSeen,
       language: nextLanguage,
@@ -1724,37 +1600,6 @@ export default function App() {
     setStatusMessage(getLocalizedText("languageSaved", nextLanguage));
   };
 
-<<<<<<< Updated upstream
-  const handlePreLoginContinue = useCallback(() => {
-    setPreLoginReady(true);
-    setShowCinematic(false);
-  }, []);
-
-  const handleCLICommand = useCallback(() => {
-    const cmd = cliInput.trim().toLowerCase();
-    if (cmd === "/log pact") {
-      setStatusMessage("SYSTEM LOG: PACT HISTORY LOADED");
-    } else if (cmd.startsWith("/search ")) {
-      setStatusMessage(`SEARCH: ${cliInput.trim().slice(8).toUpperCase()}`);
-    } else if (
-      cmd === "/override premium" ||
-      cmd === "/override [premium_feature]"
-    ) {
-      setShowMonetization(true);
-    } else if (cmd === "/uplink") {
-      setStatusMessage("UPLINK: OVERSEER CHANNEL ACTIVE");
-    } else if (cmd === "/log") {
-      setStatusMessage("SYSTEM LOG: TERMINAL LOADED");
-    } else if (cmd.startsWith("/lang ")) {
-      void changeLanguage(cmd.slice(6).trim() as SupportedLanguage);
-    } else if (cmd.length > 0) {
-      setStatusMessage(`CMD UNKNOWN: ${cliInput.trim().toUpperCase()}`);
-    }
-    setCliInput("");
-  }, [cliInput, changeLanguage]);
-
-=======
->>>>>>> Stashed changes
   const handleTabPress = useCallback((tab: AppTab) => {
     setActiveTab(tab);
     mainScrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -1813,11 +1658,6 @@ export default function App() {
   };
 
   const handleJoinSquad = () => {
-
-  const handleLeaveSquadPrompt = () => {
-    console.log("Leave squad pressed");
-  };
-
     if (!squadJoinCode.trim()) {
       setStatusMessage("JOIN CODE REQUIRED");
       return;
@@ -1888,53 +1728,11 @@ export default function App() {
     setTemplateMessage(`THEME UNLOCKED: ${getDesignTemplateById(templateId)?.name ?? "THEME"}.`);
   };
 
-<<<<<<< Updated upstream
-  const ScanlineOverlay = () => (
-    <View style={styles.scanlineOverlay}>
-      {Array.from({ length: 28 }).map((_, index) => (
-        <View
-          key={`scan-${index}`}
-          style={[
-            styles.scanlineBar,
-            {
-              top: index * 8 + scanOffset,
-              backgroundColor: accent,
-              opacity: 0.08 + (index % 3) * 0.02,
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-
-  if (showCinematic && i18nReady) {
-    return (
-      <View style={styles.authBootShell}>
-        <WelcomeCinematic language={language} onComplete={() => setShowCinematic(false)} />
-      </View>
-    );
-  }
-
-  if (!preLoginReady && i18nReady) {
-    return (
-      <PreLoginExperience
-        language={language}
-        onLanguageChange={(nextLanguage) => void changeLanguage(nextLanguage)}
-        onContinue={handlePreLoginContinue}
-        title={getLocalizedText('welcomeInitializeProtocol', language)}
-        subtitle={getLocalizedText('welcomeContract', language)}
-      />
-    );
-  }
-
-  // Boot sequence shown once on first launch — renders before auth, covers the full screen
-=======
->>>>>>> Stashed changes
   if (bootReady !== true) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: BG_COLOR }}>
         <StatusBar style="light" hidden />
-        <BootSequence language={language as any}
+        <BootSequence
           onComplete={() => {
             setBootReady(true);
             void AsyncStorage.setItem("@peakpact/boot-seen", "true");
@@ -1974,7 +1772,7 @@ export default function App() {
       {!onboardingSeen ? (
         <View style={styles.onboardingOverlay}>
           <View style={styles.onboardingCard}>
-            <Text style={styles.onboardingLabel}>{getLocalizedText("onboardingWelcomeLabel", language as any)}</Text>
+            <Text style={styles.onboardingLabel}>{getLocalizedText("onboardingWelcomeLabel", language)}</Text>
             <Text style={styles.onboardingTitle}>
               {firstSessionGuide.title}
             </Text>
@@ -1988,7 +1786,7 @@ export default function App() {
             </View>
             <View style={styles.onboardingActionRow}>
               <Text style={styles.onboardingActionLabel}>
-                {getLocalizedText("onboardingFirstStepLabel", language as any)}
+                {getLocalizedText("onboardingFirstStepLabel", language)}
               </Text>
               <Text style={styles.onboardingActionValue}>
                 {firstSessionGuide.primaryAction}
@@ -1999,7 +1797,7 @@ export default function App() {
               onPress={handleOnboardingAdvance}
             >
               <Text style={styles.buttonPrimaryText}>
-                {getLocalizedText("onboardingButton", language as any)}
+                {getLocalizedText("onboardingButton", language)}
               </Text>
             </Pressable>
           </View>
@@ -2122,382 +1920,6 @@ export default function App() {
                   <Text style={styles.heroSubtitle}>
                     {state.missionDescription}
                   </Text>
-<<<<<<< Updated upstream
-                  <Text style={[styles.heroEmphasis, { color: accent }]}>
-                    {heroSummary.emphasis}
-                  </Text>
-                  <View
-                    style={[
-                      styles.heroMissionRow,
-                      heroMissionRowVariantStyle,
-                      { borderColor: accent },
-                    ]}
-                  >
-                    <Text style={styles.heroMissionLabel}>ACTIVE MISSION</Text>
-                    <Text style={styles.heroMissionText}>
-                      {state.missionTitle}
-                    </Text>
-                  </View>
-                </Animated.View>
-              </View>
-
-              <View
-                style={{ display: activeTab === "PROFILE" ? "flex" : "none" }}
-              >
-                <ProfilePanel
-                  accent={accent}
-                  operatorCodename={operatorCodename}
-                  activeUserEmail={activeUserEmail}
-                  pp={state.pp}
-                  level={state.level}
-                  streak={state.streak}
-                />
-                <View
-                  style={[
-                    styles.panel,
-                    styles.launchShowcasePanel,
-                    { borderColor: accent },
-                  ]}
-                >
-                  <ImageBackground
-                    source={terminalBackdrop}
-                    resizeMode="cover"
-                    style={styles.launchShowcaseArt}
-                    imageStyle={styles.launchShowcaseArtImage}
-                  >
-                    <View style={styles.launchShowcaseVeil} />
-                    <View style={styles.launchShowcaseContent}>
-                      <View style={styles.launchShowcaseHeaderRow}>
-                        <BrandMark accent={accent} size={86} />
-                        <View style={styles.launchShowcaseHeaderCopy}>
-                          <Text
-                            style={[
-                              styles.panelTitle,
-                              { color: accent, marginBottom: 2 },
-                            ]}
-                          >
-                            {launchCopyPack.appTitleOptions[0]}
-                          </Text>
-                          <Text style={styles.launchShowcaseSubtitle}>
-                            Elite launch visuals curated from the current asset
-                            set.
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.launchShowcaseMetaRow}>
-                        <View
-                          style={[
-                            styles.launchShowcaseMetaChip,
-                            { borderColor: accent },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.launchShowcaseMetaText,
-                              { color: accent },
-                            ]}
-                          >
-                            FOUNDER GRADE
-                          </Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.launchShowcaseMetaChip,
-                            { borderColor: accent },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.launchShowcaseMetaText,
-                              { color: accent },
-                            ]}
-                          >
-                            VERIFIED ASSET DECK
-                          </Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.launchShowcaseMetaChip,
-                            { borderColor: accent },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.launchShowcaseMetaText,
-                              { color: accent },
-                            ]}
-                          >
-                            PREMIUM READY
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.launchShowcaseCaptionRow}>
-                        {launchCopyPack.screenshotCaptions
-                          .slice(0, 3)
-                          .map((caption) => (
-                            <View
-                              key={caption}
-                              style={[
-                                styles.launchShowcaseCaptionChip,
-                                { borderColor: accent },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.launchShowcaseCaptionText,
-                                  { color: accent },
-                                ]}
-                              >
-                                {caption}
-                              </Text>
-                            </View>
-                          ))}
-                      </View>
-                      <Text style={styles.launchShowcaseBody}>
-                        {launchCopyPack.shortDescription}
-                      </Text>
-                    </View>
-                  </ImageBackground>
-                </View>
-
-                <View style={styles.launchMediaRail}>
-                  <View
-                    style={[styles.launchMediaCard, { borderColor: accent }]}
-                  >
-                    <ImageBackground
-                      source={peakpactSplash}
-                      resizeMode="cover"
-                      style={styles.launchMediaArt}
-                      imageStyle={styles.launchMediaArtImage}
-                    >
-                      <View style={styles.launchMediaVeil} />
-                      <Text
-                        style={[styles.launchMediaLabel, { color: accent }]}
-                      >
-                        SPLASH
-                      </Text>
-                    </ImageBackground>
-                  </View>
-                  <View
-                    style={[styles.launchMediaCard, { borderColor: accent }]}
-                  >
-                    <ImageBackground
-                      source={peakpactIcon}
-                      resizeMode="contain"
-                      style={styles.launchMediaArt}
-                      imageStyle={styles.launchMediaIconImage}
-                    >
-                      <View style={styles.launchMediaVeil} />
-                      <Text
-                        style={[styles.launchMediaLabel, { color: accent }]}
-                      >
-                        ICON
-                      </Text>
-                    </ImageBackground>
-                  </View>
-                  <View
-                    style={[styles.launchMediaCard, { borderColor: accent }]}
-                  >
-                    <ImageBackground
-                      source={peakpactAdaptiveIcon}
-                      resizeMode="contain"
-                      style={styles.launchMediaArt}
-                      imageStyle={styles.launchMediaIconImage}
-                    >
-                      <View style={styles.launchMediaVeil} />
-                      <Text
-                        style={[styles.launchMediaLabel, { color: accent }]}
-                      >
-                        ANDROID
-                      </Text>
-                    </ImageBackground>
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
-                <MissionPanel
-                  accent={accent}
-                  missionTitle={state.missionTitle}
-                  missionDescription={state.missionDescription}
-                  missionRisk={state.missionRisk}
-                  missionRewardBonus={state.missionRewardBonus}
-                  missionTimeWindowMinutes={state.missionTimeWindowMinutes}
-                  missionContractTemplate={state.missionContractTemplate}
-                  pp={state.pp}
-                  streak={state.streak}
-                  level={state.level}
-                />
-                <Animated.View
-                  style={[
-                    styles.statsRow,
-                    statsRowVariantStyle,
-                    statsTemplateAnimatedStyle,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.statBox,
-                      statBoxVariantStyle,
-                      { borderColor: accent },
-                    ]}
-                  >
-                    <Text style={[styles.statLabel, { color: accent }]}>
-                      PP BALANCE
-                    </Text>
-                    <Text
-                      style={[
-                        styles.statValue,
-                        { color: state.redState ? PEAK_CRIMSON : accent },
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                    >
-                      {state.pp}
-                    </Text>
-                    <Text style={styles.statSubLabel}>
-                      {eliteOverrideActive ? "\u221e ELITE" : "POINTS"}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.statBox,
-                      statBoxVariantStyle,
-                      { borderColor: accent },
-                    ]}
-                  >
-                    <Text style={[styles.statLabel, { color: accent }]}>
-                      STREAK
-                    </Text>
-                    <Text style={[styles.statValue, { color: accent }]}>
-                      {state.streak}
-                    </Text>
-                    <Text style={styles.statSubLabel}>{translate("daysLabel")}</Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.statBox,
-                      statBoxVariantStyle,
-                      { borderColor: accent },
-                    ]}
-                  >
-                    <Text style={[styles.statLabel, { color: accent }]}>
-                      LEVEL
-                    </Text>
-                    <Text style={[styles.statValue, { color: accent }]}>
-                      {state.level}
-                    </Text>
-                    <Text style={styles.statSubLabel}>
-                      {founderPrivilegesActive ? translate("founderLabel") : `${state.xp} ${translate("xpLabel")}`}
-                    </Text>
-                  </View>
-                </Animated.View>
-
-                <View
-                  style={[styles.dailyLoopCard, { borderColor: `${accent}55` }]}
-                >
-                  <View style={styles.dailyLoopHeaderRow}>
-                    <Text style={[styles.dailyLoopTitle, { color: accent }]}>
-                      {dailyLoopGuide.title}
-                    </Text>
-                    <View
-                      style={[
-                        styles.dailyLoopNextBadge,
-                        { borderColor: `${accent}55` },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dailyLoopNextBadgeText,
-                          { color: accent },
-                        ]}
-                      >
-                        UP NEXT
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={styles.dailyLoopBody}>
-                    {dailyLoopGuide.body}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dailyLoopNextAction,
-                      {
-                        color: recoveryVisualState.isRecoveryVisualActive
-                          ? "#7FE7C9"
-                          : accent,
-                      },
-                    ]}
-                  >
-                    {dailyLoopGuide.nextAction}
-                  </Text>
-                  <View style={styles.dailyLoopSteps}>
-                    {dailyLoopGuide.steps.map((step, index) => (
-                      <View key={step.title} style={styles.dailyLoopStep}>
-                        <Text
-                          style={[styles.dailyLoopStepNum, { color: accent }]}
-                        >
-                          {index + 1}
-                        </Text>
-                        <View style={styles.dailyLoopStepContent}>
-                          <Text style={styles.dailyLoopStepTitle}>
-                            {step.title}
-                          </Text>
-                          <Text style={styles.dailyLoopStepBody}>
-                            {step.body}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                {state.levelFlash ? (
-                  <View style={styles.levelBanner}>
-                    <Text style={styles.levelBannerText}>
-                      LEVEL UP / GLITCH LOCK
-                    </Text>
-                  </View>
-                ) : null}
-
-                <View style={[styles.panel, { borderColor: accent }]}>
-                  <Text style={[styles.panelTitle, { color: accent }]}>
-                    [ ELITE DAILY CHALLENGE ]
-                  </Text>
-                  <View
-                    style={[
-                      styles.challengeCard,
-                      { borderColor: dailyChallenge.accent },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.challengeTitle,
-                        { color: dailyChallenge.accent },
-                      ]}
-                    >
-                      {dailyChallenge.title}
-                    </Text>
-                    <Text style={styles.challengeBody}>
-                      {dailyChallenge.body}
-                    </Text>
-                    <Text style={styles.challengeReward}>
-                      REWARD:{" "}
-                      {effectivePlan === "PREMIUM"
-                        ? dailyChallenge.premiumRewardPP
-                        : dailyChallenge.rewardPP}{" "}
-                      PP
-                    </Text>
-                    <View style={styles.progressBarShell}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            width: `${Math.min(100, Math.round((dailyChallenge.progress.current / dailyChallenge.progress.target) * 100))}%`,
-                            backgroundColor: dailyChallenge.accent,
-                          },
-                        ]}
-=======
                 </View>
 
                 {pactFlowMode === "planning" ? (
@@ -2512,7 +1934,6 @@ export default function App() {
                         onChangeText={setContractTask}
                         placeholder="Deep Work Session"
                         placeholderTextColor={SECONDARY_TEXT}
->>>>>>> Stashed changes
                       />
                       
                       <View style={styles.rowFlexGap}>
@@ -2686,280 +2107,9 @@ export default function App() {
                         <Text style={[styles.buttonSecondaryText, { color: DANGER_COLOR }]}>LEAVE CURRENT CREW</Text>
                      </Pressable>
                   )}
-
-                  {leaveSquadConfirmOpen && (
-                     <View style={{ padding: 16, borderWidth: 1, borderColor: DANGER_COLOR, borderRadius: 16, marginTop: 16, backgroundColor: "rgba(255,82,82,0.04)" }}>
-                        <Text style={{ color: PRIMARY_TEXT, fontWeight: "600", marginBottom: 6 }}>CONFIRM EXIT?</Text>
-                        <Text style={{ color: SECONDARY_TEXT, fontSize: 13, marginBottom: 14 }}>This will deduct a PP fee and remove you from the active roster.</Text>
-                        <View style={styles.rowFlexGap}>
-                           <Pressable style={[styles.buttonSecondary, { flex: 1, borderColor: DANGER_COLOR, marginRight: 8 }]} onPress={confirmLeaveSquad}>
-                              <Text style={[styles.buttonSecondaryText, { color: DANGER_COLOR }]}>CONFIRM EXIT</Text>
-                           </Pressable>
-                           <Pressable style={[styles.buttonSecondary, { flex: 1 }]} onPress={cancelLeaveSquad}>
-                              <Text style={styles.buttonSecondaryText}>CANCEL</Text>
-                           </Pressable>
-                        </View>
-                     </View>
-                  )}
                 </View>
               </View>
 
-<<<<<<< Updated upstream
-              <View
-                style={{ display: activeTab === "SYSTEM" ? "flex" : "none" }}
-              >
-                <CompliancePanel
-                  accent={accent}
-                  consented={hasRequiredComplianceConsent(complianceConsent)}
-                  termsText={getTermsOfUseText()}
-                  privacyText={getPrivacyPolicyText()}
-                />
-                <View style={[styles.panel, { borderColor: accent }]}>
-                  <View style={styles.languageRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.panelTitle, { color: accent }]}>
-                        [ {getLocalizedText("languagePickerTitle", language)} ]
-                      </Text>
-                      <Text style={[styles.storeStatus, { marginTop: 6 }]}>
-                        {getLocalizedText("profileLanguageNote", language)}
-                      </Text>
-                    </View>
-                    <View
-                      style={[styles.languagePicker, { borderColor: accent }]}
-                    >
-                      {getSupportedLanguages().map((option) => (
-                        <Pressable
-                          key={option.code}
-                          style={[
-                            styles.languageChip,
-                            language === option.code &&
-                              styles.languageChipActive,
-                            { borderColor: accent },
-                          ]}
-                          onPress={() => void changeLanguage(option.code)}
-                        >
-                          <Text
-                            style={[
-                              styles.languageChipText,
-                              {
-                                color:
-                                  language === option.code ? "#000000" : accent,
-                              },
-                            ]}
-                          >
-                            {option.label}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-                  <View style={styles.guideCard}>
-                    {howToUseSteps.map((step) => (
-                      <View key={step.title} style={styles.guideRow}>
-                        <Text style={styles.guideTitle}>{step.title}</Text>
-                        <Text style={styles.guideBody}>{step.body}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <View style={[styles.panel, { borderColor: accent }]}>
-                  <Text style={[styles.panelTitle, { color: accent }]}>
-                    [ EU / ROMANIA COMPLIANCE ]
-                  </Text>
-                  <Text style={styles.storeTitle}>
-                    {buildComplianceNotice(complianceConsent)}
-                  </Text>
-                  <View style={styles.complianceRow}>
-                    <Pressable
-                      style={[styles.checkbox, styles.checkboxActive]}
-                      onPress={toggleComplianceScreen}
-                    >
-                      <Text style={styles.checkboxText}>
-                        {showComplianceScreen ? "▼" : "►"} OPEN LEGAL SCREEN
-                      </Text>
-                    </Pressable>
-                  </View>
-                  {showComplianceScreen ? (
-                    <View style={styles.complianceScreen}>
-                      <View style={styles.complianceCard}>
-                        <Text style={styles.complianceHeading}>
-                          PRIVACY POLICY
-                        </Text>
-                        {getPrivacyPolicyText().map((entry) => (
-                          <Text key={entry} style={styles.complianceBody}>
-                            {entry}
-                          </Text>
-                        ))}
-                      </View>
-                      <View style={styles.complianceCard}>
-                        <Text style={styles.complianceHeading}>
-                          TERMS OF USE
-                        </Text>
-                        {getTermsOfUseText().map((entry) => (
-                          <Text key={entry} style={styles.complianceBody}>
-                            {entry}
-                          </Text>
-                        ))}
-                      </View>
-                    </View>
-                  ) : null}
-                  <View style={styles.complianceRow}>
-                    <Pressable
-                      style={[
-                        styles.checkbox,
-                        complianceConsent.privacyAccepted &&
-                          styles.checkboxActive,
-                      ]}
-                      onPress={() =>
-                        toggleComplianceConsent(
-                          "privacyAccepted",
-                          !complianceConsent.privacyAccepted,
-                        )
-                      }
-                    >
-                      <Text style={styles.checkboxText}>
-                        {complianceConsent.privacyAccepted ? "✓" : "○"} PRIVACY
-                        NOTICE ACCEPTED
-                      </Text>
-                    </Pressable>
-                  </View>
-                  <View style={styles.complianceRow}>
-                    <Pressable
-                      style={[
-                        styles.checkbox,
-                        complianceConsent.termsAccepted &&
-                          styles.checkboxActive,
-                      ]}
-                      onPress={() =>
-                        toggleComplianceConsent(
-                          "termsAccepted",
-                          !complianceConsent.termsAccepted,
-                        )
-                      }
-                    >
-                      <Text style={styles.checkboxText}>
-                        {complianceConsent.termsAccepted ? "✓" : "○"} TERMS
-                        ACCEPTED
-                      </Text>
-                    </Pressable>
-                  </View>
-                  <View style={styles.complianceRow}>
-                    <Pressable
-                      style={[
-                        styles.checkbox,
-                        complianceConsent.ageConfirmed && styles.checkboxActive,
-                      ]}
-                      onPress={() =>
-                        toggleComplianceConsent(
-                          "ageConfirmed",
-                          !complianceConsent.ageConfirmed,
-                        )
-                      }
-                    >
-                      <Text style={styles.checkboxText}>
-                        {complianceConsent.ageConfirmed ? "✓" : "○"} AGE 16+
-                        CONFIRMED
-                      </Text>
-                    </Pressable>
-                  </View>
-                  <Text
-                    style={[
-                      styles.storeStatus,
-                      { color: accent, marginTop: 6 },
-                    ]}
-                  >
-                    This is a launch-ready EU-style compliance scaffold. A final
-                    privacy policy, terms, retention schedule, and data deletion
-                    path should be reviewed by local counsel before public
-                    release.
-                  </Text>
-                  <View style={styles.launchMetadataBox}>
-                    <Text
-                      style={[
-                        styles.panelTitle,
-                        { color: accent, marginBottom: 4 },
-                      ]}
-                    >
-                      [ LAUNCH CONTACTS ]
-                    </Text>
-                    <Text style={styles.storeTitle}>
-                      Support: {launchMetadata.supportEmail}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      Privacy: {launchMetadata.privacyUrl}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      Terms: {launchMetadata.termsUrl}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      Android: {launchMetadata.playStoreUrl}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      iOS: {launchMetadata.appStoreUrl}
-                    </Text>
-                  </View>
-                  <View style={styles.launchMetadataBox}>
-                    <Text
-                      style={[
-                        styles.panelTitle,
-                        { color: accent, marginBottom: 4 },
-                      ]}
-                    >
-                      [ STORE COPY READY ]
-                    </Text>
-                    <Text style={styles.storeTitle}>
-                      Title options:{" "}
-                      {launchCopyPack.appTitleOptions.join(" • ")}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      Short: {launchCopyPack.shortDescription}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      Captions:{" "}
-                      {launchCopyPack.screenshotCaptions
-                        .slice(0, 3)
-                        .join(" / ")}
-                    </Text>
-                    <Text style={styles.storeStatus}>
-                      Hooks:{" "}
-                      {launchCopyPack.marketingHooks.slice(0, 4).join(" / ")}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View
-                style={{ display: activeTab === "PROFILE" ? "flex" : "none" }}
-              >
-                <View style={[styles.panel, { borderColor: accent }]}>
-                  <Text style={[styles.panelTitle, { color: accent }]}>
-                    [ PROGRESSION REWARDS ]
-                  </Text>
-                  <Text
-                    style={[
-                      styles.storeTitle,
-                      { color: accent, marginBottom: 8 },
-                    ]}
-                  >
-                    REWARDS UNLOCKED: {narrativeProgress.unlockedCount}/
-                    {narrativeProgress.totalCount}
-                  </Text>
-                  <View style={styles.rewardGrid}>
-                    {narrativeProgress.episodes.slice(0, 6).map((episode) => {
-                      const rewardLabel =
-                        episode.requiredLevel <= 2
-                          ? "OPERATOR TITLE"
-                          : episode.requiredLevel <= 4
-                            ? "TERMINAL THEME"
-                            : episode.requiredLevel <= 6
-                              ? "RECOVERY BOOST"
-                              : episode.requiredLevel <= 8
-                                ? "ADVANCED PROTOCOL"
-                                : episode.requiredLevel <= 10
-                                  ? "PRESTIGE BADGE"
-                                  : "HIDDEN TRANSMISSION";
-=======
               {/* TAB: STORE */}
               <View style={[styles.tabContentContainer, { display: activeTab === "STORE" ? "flex" : "none" }]}>
                 <View style={styles.card}>
@@ -2969,7 +2119,6 @@ export default function App() {
                   {templateMessage && (
                      <Text style={[styles.cardSubtitle, { color: ACCENT_GREEN, marginTop: 10 }]}>{templateMessage}</Text>
                   )}
->>>>>>> Stashed changes
 
                   <View style={styles.stackGapMarginTop}>
                     {designTemplates.map((template) => {
@@ -3066,7 +2215,7 @@ export default function App() {
                           styles.languageChip,
                           language === opt.code && styles.languageChipActive,
                         ]}
-                        onPress={() => void changeLanguage(opt.code as any)}
+                        onPress={() => void changeLanguage(opt.code)}
                       >
                         <Text style={[
                           styles.languageChipText,
