@@ -18,5 +18,7 @@ describe('i18n service', () => {
     assert.ok(codes.includes('pt'));
     assert.ok(codes.includes('ja'));
     assert.ok(codes.includes('zh'));
+    assert.ok(codes.includes('ro'));
+    assert.ok(codes.includes('it'));
   });
 });

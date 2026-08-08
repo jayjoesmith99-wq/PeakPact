@@ -1,5 +1,3 @@
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import appConfig from "./app.json";
@@ -117,6 +115,11 @@ import {
 import { initializeI18n } from "./src/i18n";
 import { getTutorialSteps } from "./src/services/tutorialService";
 import {
+  getEntitlementStatus,
+  initializePurchases,
+  restorePurchases,
+} from "./src/services/purchasesService";
+import {
   getRecoveryVisualState,
   isRedFlashActive,
   shouldPulseRedFlash,
@@ -131,6 +134,11 @@ import {
   type Squad,
 } from "./src/services/squadSystem";
 import { loadPersistedAppState, savePersistedAppState } from "./src/services/appStateStorage";
+import { MissionPanel } from "./src/features/missions/MissionPanel";
+import { ProfilePanel } from "./src/features/profile/ProfilePanel";
+import { CompliancePanel } from "./src/features/compliance/CompliancePanel";
+import { PreLoginExperience } from "./src/features/onboarding/PreLoginExperience";
+import { WelcomeCinematic } from "./src/features/onboarding/WelcomeCinematic";
 import {
   getDailyChallenge,
   getPremiumBoostSummary,
@@ -738,6 +746,8 @@ export default function App() {
   const [state, setState] = useState<AppState>(createInitialState);
   const [authBooting, setAuthBooting] = useState(true);
   const [accessGranted, setAccessGranted] = useState(false);
+  const [preLoginReady, setPreLoginReady] = useState(false);
+  const [showCinematic, setShowCinematic] = useState(true);
   const [accessMode, setAccessMode] = useState<AccessMode>("SIGN_IN");
   const [accessForm, setAccessForm] = useState<AccessFormState>({
     codename: "",
@@ -759,6 +769,7 @@ export default function App() {
   const [, setShowMonetization] = useState(false);
   const [onboardingSeen, setOnboardingSeen] = useState(false);
   const [language, setLanguage] = useState<SupportedLanguage>("en");
+  const [i18nReady, setI18nReady] = useState(false);
   const translate = useCallback(
     (key: string) => getLocalizedText(key, language),
     [language],
@@ -949,19 +960,9 @@ export default function App() {
   );
 
   useEffect(() => {
-    const setupRevenueCat = async () => {
-      try {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-        if (Platform.OS === "android" || Platform.OS === "ios") {
-          await Purchases.configure({
-            apiKey: "test_EkRWwTbbsUcXStanIWZNYLGIowZ",
-          });
-        }
-      } catch (error) {
-        console.error("RevenueCat Init Error:", error);
-      }
-    };
-    setupRevenueCat();
+    void initializePurchases();
+    void restorePurchases();
+    void getEntitlementStatus();
   }, []);
 
   useEffect(() => {
@@ -998,7 +999,7 @@ export default function App() {
       const session = await restoreOperatorSession();
       if (session?.user) {
         setOperatorCodename(
-          extractOperatorCodename(session.user, session.user.email),
+          extractOperatorCodename(session.user, session.user.email ?? undefined),
         );
         setAccessForm((prev) => ({
           ...prev,
@@ -1018,7 +1019,7 @@ export default function App() {
       if (session?.user) {
         setAccessGranted(true);
         setOperatorCodename(
-          extractOperatorCodename(session.user, session.user.email),
+          extractOperatorCodename(session.user, session.user.email ?? undefined),
         );
         setAccessForm((prev) => ({
           ...prev,
@@ -1463,30 +1464,38 @@ export default function App() {
 
   useEffect(() => {
     const hydrateLanguage = async () => {
-      const stored = await getStoredLanguage();
-      const persisted = await loadPersistedAppState();
-      const resolved = persisted?.language || stored;
-      await initializeI18n();
-      await setStoredLanguage(resolved);
-      if (persisted) {
-        setLanguage(resolved);
-        setOnboardingSeen(persisted.onboardingSeen);
-        setSquads(
-          persisted.squads.length > 0 ? persisted.squads : createSeedSquads(),
-        );
-        setActiveSquadId(persisted.activeSquadId);
-        setOwnedDesignTemplates(
-          persisted.ownedDesignTemplates.length > 0
-            ? persisted.ownedDesignTemplates
-            : ["core"],
-        );
-        setSelectedDesignTemplateId(
-          persisted.selectedDesignTemplateId ?? "core",
-        );
-      } else {
-        setLanguage(stored);
+      try {
+        const stored = await getStoredLanguage();
+        const persisted = await loadPersistedAppState();
+        const resolved = persisted?.language || stored;
+        await initializeI18n();
+        await setStoredLanguage(resolved);
+        if (persisted) {
+          setLanguage(resolved);
+          setOnboardingSeen(persisted.onboardingSeen);
+          setSquads(
+            persisted.squads.length > 0 ? persisted.squads : createSeedSquads(),
+          );
+          setActiveSquadId(persisted.activeSquadId);
+          setOwnedDesignTemplates(
+            persisted.ownedDesignTemplates.length > 0
+              ? persisted.ownedDesignTemplates
+              : ["core"],
+          );
+          setSelectedDesignTemplateId(
+            persisted.selectedDesignTemplateId ?? "core",
+          );
+        } else {
+          setLanguage(stored);
+        }
+        setI18nReady(true);
+        setHasHydratedPersistence(true);
+      } catch {
+        await setStoredLanguage('en');
+        setLanguage('en');
+        setI18nReady(true);
+        setHasHydratedPersistence(true);
       }
-      setHasHydratedPersistence(true);
     };
 
     void hydrateLanguage();
@@ -2037,6 +2046,11 @@ export default function App() {
     });
     setStatusMessage(getLocalizedText("languageSaved", nextLanguage));
   };
+
+  const handlePreLoginContinue = useCallback(() => {
+    setPreLoginReady(true);
+    setShowCinematic(false);
+  }, []);
 
   const handleCLICommand = useCallback(() => {
     const cmd = cliInput.trim().toLowerCase();
@@ -2732,6 +2746,26 @@ export default function App() {
     </View>
   );
 
+  if (showCinematic && i18nReady) {
+    return (
+      <View style={styles.authBootShell}>
+        <WelcomeCinematic language={language} onComplete={() => setShowCinematic(false)} />
+      </View>
+    );
+  }
+
+  if (!preLoginReady && i18nReady) {
+    return (
+      <PreLoginExperience
+        language={language}
+        onLanguageChange={(nextLanguage) => void changeLanguage(nextLanguage)}
+        onContinue={handlePreLoginContinue}
+        title={getLocalizedText('welcomeInitializeProtocol', language)}
+        subtitle={getLocalizedText('welcomeContract', language)}
+      />
+    );
+  }
+
   // Boot sequence shown once on first launch — renders before auth, covers the full screen
   if (bootReady !== true) {
     return (
@@ -3327,6 +3361,14 @@ export default function App() {
               <View
                 style={{ display: activeTab === "PROFILE" ? "flex" : "none" }}
               >
+                <ProfilePanel
+                  accent={accent}
+                  operatorCodename={operatorCodename}
+                  activeUserEmail={activeUserEmail}
+                  pp={state.pp}
+                  level={state.level}
+                  streak={state.streak}
+                />
                 <View
                   style={[
                     styles.panel,
@@ -3491,6 +3533,18 @@ export default function App() {
               </View>
 
               <View style={{ display: activeTab === "PACT" ? "flex" : "none" }}>
+                <MissionPanel
+                  accent={accent}
+                  missionTitle={state.missionTitle}
+                  missionDescription={state.missionDescription}
+                  missionRisk={state.missionRisk}
+                  missionRewardBonus={state.missionRewardBonus}
+                  missionTimeWindowMinutes={state.missionTimeWindowMinutes}
+                  missionContractTemplate={state.missionContractTemplate}
+                  pp={state.pp}
+                  streak={state.streak}
+                  level={state.level}
+                />
                 <Animated.View
                   style={[
                     styles.statsRow,
@@ -4538,6 +4592,12 @@ export default function App() {
               <View
                 style={{ display: activeTab === "SYSTEM" ? "flex" : "none" }}
               >
+                <CompliancePanel
+                  accent={accent}
+                  consented={hasRequiredComplianceConsent(complianceConsent)}
+                  termsText={getTermsOfUseText()}
+                  privacyText={getPrivacyPolicyText()}
+                />
                 <View style={[styles.panel, { borderColor: accent }]}>
                   <View style={styles.languageRow}>
                     <View style={{ flex: 1 }}>

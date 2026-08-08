@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/elite-splash.jpg",
+      "image": "./assets/elite-splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -38,7 +38,8 @@
         {
           "microphonePermission": "Allow PeakPact to access your microphone to record completion reports."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "eas": {
