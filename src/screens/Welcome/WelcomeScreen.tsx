@@ -18,6 +18,7 @@ import Animated, {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getLocalizedText } from '../../i18n';
+import { getWelcomePromptHighlights } from '../../services/welcomePrompt';
 
 const welcomeVideo = require('../../../assets/9e977029180a9977b941d4d9561753b0.mp4');
 const logo = require('../../../assets/logo.peakpact.png');
@@ -53,6 +54,7 @@ export default function WelcomeScreen({
   const [videoError, setVideoError] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
   const videoRef = useRef<Video>(null);
+  const highlights = getWelcomePromptHighlights();
 
   const textOpacity = useSharedValue(0);
   const textTranslateY = useSharedValue(24);
@@ -195,6 +197,16 @@ export default function WelcomeScreen({
           <Animated.View style={[styles.textContainer, textAnimatedStyle]}>
             <Text style={styles.titleText}>{getLocalizedText('appTitle')}</Text>
             {currentMessage ? <Text style={styles.messageText}>{currentMessage}</Text> : null}
+            {phase !== 'outro' ? (
+              <View style={styles.highlightsShell}>
+                {highlights.map((highlight) => (
+                  <View key={highlight.title} style={styles.highlightCard}>
+                    <Text style={styles.highlightTitle}>{highlight.title}</Text>
+                    <Text style={styles.highlightBody}>{highlight.body}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </Animated.View>
 
           <Animated.View style={[styles.buttonRow, buttonsAnimatedStyle]}>
@@ -281,6 +293,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
+    width: '100%',
   },
   titleText: {
     color: '#F5F5F5',
@@ -295,6 +308,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 26,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  highlightsShell: {
+    width: '100%',
+    maxWidth: 560,
+    gap: 10,
+  },
+  highlightCard: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(8, 8, 8, 0.82)',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  highlightTitle: {
+    color: '#76FF03',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  highlightBody: {
+    color: '#F5F5F5',
+    fontSize: 13,
+    lineHeight: 19,
+    opacity: 0.9,
   },
   buttonRow: {
     alignItems: 'center',
