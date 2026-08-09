@@ -26,6 +26,7 @@ export async function initializeI18n(): Promise<void> {
       resources: {
         en: { 
           translation: {
+            welcomeIntro: "System boot sequence initiated. Stand by.",
             tabPact: "PACT",
             tabSquad: "SQUAD",
             tabStore: "STORE",

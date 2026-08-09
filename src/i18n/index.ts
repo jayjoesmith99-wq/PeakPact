@@ -10,8 +10,17 @@ export async function initializeI18n(): Promise<void> {
     await i18n.init({
       compatibilityJSON: "v4",
       fallbackLng: "en",
+      lng: "en",
       resources: {
-        en: { translation: require("./locales/en.json") },
+        en: { translation: resources.en.translation },
+        es: { translation: resources.es.translation },
+        fr: { translation: resources.fr.translation },
+        de: { translation: resources.de.translation },
+        pt: { translation: resources.pt.translation },
+        ja: { translation: resources.ja.translation },
+        zh: { translation: resources.zh.translation },
+        ro: { translation: resources.ro.translation },
+        it: { translation: resources.it.translation },
       },
       interpolation: { escapeValue: false },
     });
@@ -344,7 +353,7 @@ export const resources = {
       macroRecoveryLabel: 'RÉCUPÉRATION',
       macroRecoveryValue: 'Réalise un bloc de récupération de qualité et documente le résultat',
       macroExecuteLabel: 'EXÉCUTER',
-      macroExecuteValue: 'Produit une session d’exécution mesurable avec une preuve claire',
+      macroExecuteValue: 'Produis une session d’exécution mesurable avec une preuve claire',
       macroResetLabel: 'RÉINITIALISER',
       macroResetValue: 'Relance la boucle avec un court bloc discipliné',
       commonSubmit: 'ENVOYER',
@@ -1101,74 +1110,58 @@ export const resources = {
   },
 } as const;
 
-const storageKey = '@peakpact/language';
-
-const supportedLanguageEntries: SupportedLanguageOption[] = [
-  { code: 'en', label: 'EN' },
-  { code: 'es', label: 'ES' },
-  { code: 'fr', label: 'FR' },
-  { code: 'de', label: 'DE' },
-  { code: 'pt', label: 'PT' },
-  { code: 'ja', label: 'JA' },
-  { code: 'zh', label: 'ZH' },
-  { code: 'ro', label: 'RO' },
-  { code: 'it', label: 'IT' },
-];
-
-export type TranslationKey = keyof typeof resources.en.translation;
-
-function normalizeLanguage(value?: string | null): SupportedLanguage {
-  if (!value) {
-    return 'en';
-  }
-  const lowered = value.toLowerCase();
-  if (lowered.startsWith('es')) return 'es';
-  if (lowered.startsWith('fr')) return 'fr';
-  if (lowered.startsWith('de')) return 'de';
-  if (lowered.startsWith('pt')) return 'pt';
-  if (lowered.startsWith('ja')) return 'ja';
-  if (lowered.startsWith('zh')) return 'zh';
-  return 'en';
-}
-
-export function resolveLanguage(value?: string | null): SupportedLanguage {
-  const candidate = value?.trim();
-  if (candidate && candidate in resources) {
-    return candidate as SupportedLanguage;
-  }
-  return normalizeLanguage(candidate);
-}
-
 export async function getStoredLanguage(): Promise<SupportedLanguage> {
   try {
     const stored = await AsyncStorage.getItem(LANGUAGE_KEY);
-    if (stored) {
-      return resolveLanguage(stored);
+    if (stored && ["en", "es", "fr", "de", "pt", "ja", "zh", "ro", "it"].includes(stored)) {
+      return stored as SupportedLanguage;
     }
-  } catch (e) {}
-  return 'en';
-}
-
-export async function setStoredLanguage(lng: string): Promise<void> {
-  try {
-    await AsyncStorage.setItem(LANGUAGE_KEY, lng);
-    if (!i18n.isInitialized) {
-      await initializeI18n();
-    }
-    const resources = i18n.services?.resourceStore?.data || { en: {} };
-    const supportedLangs = Object.keys(resources);
-    const targetLng = supportedLangs.includes(lng) ? lng : 'en';
-    if (i18n.language !== targetLng && typeof i18n.changeLanguage === 'function') {
-      await i18n.changeLanguage(targetLng);
-    }
-  } catch (error) {
-    console.warn('Failed to set stored language:', error);
+    return "en";
+  } catch {
+    return "en";
   }
 }
 
-export function getLocalizedText(key: string, lng?: any): string {
-  const i18nInst = require('i18next').default || require('i18next');
-  return i18nInst.isInitialized && typeof i18nInst.t === 'function' ? (i18nInst.t(key, { lng: lng || i18nInst.language }) || key) : key;
+export async function setStoredLanguage(lng: SupportedLanguage): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LANGUAGE_KEY, lng);
+    
+    if (!i18n.isInitialized) {
+      await initializeI18n();
+    }
+
+    if (i18n.language !== lng && typeof i18n.changeLanguage === "function") {
+      await i18n.changeLanguage(lng);
+    }
+  } catch (error) {
+    console.warn("Failed to set stored language:", error);
+  }
 }
 
-export function getSupportedLanguages() { return [{code:"en",label:"English"}, {code:"es",label:"Spanish"}, {code:"fr",label:"French"}, {code:"de",label:"German"}, {code:"pt",label:"Portuguese"}, {code:"ro",label:"Romanian"}, {code:"it",label:"Italian"}]; }
+export function getLocalizedText(key: string, lng?: SupportedLanguage): string {
+  try {
+    if (i18n.isInitialized && typeof i18n.t === "function") {
+      const translated = i18n.t(key, { lng: lng || i18n.language });
+      if (translated && translated !== key) {
+        return translated;
+      }
+    }
+    return key;
+  } catch {
+    return key;
+  }
+}
+
+export function getSupportedLanguages() {
+  return [
+    { code: "en", label: "English" },
+    { code: "es", label: "Español" },
+    { code: "fr", label: "Français" },
+    { code: "de", label: "Deutsch" },
+    { code: "pt", label: "Português" },
+    { code: "ja", label: "日本語" },
+    { code: "zh", label: "中文" },
+    { code: "ro", label: "Română" },
+    { code: "it", label: "Italiano" },
+  ];
+}
