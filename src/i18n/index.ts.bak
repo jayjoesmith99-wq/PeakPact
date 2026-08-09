@@ -20,6 +20,24 @@ export async function initializeI18n(): Promise<void> {
   }
 }
 
+export async function getStoredLanguage(): Promise<string> {
+  try {
+    const stored = await AsyncStorage.getItem(LANGUAGE_KEY);
+    return stored || "en";
+  } catch {
+    return "en";
+  }
+}
+
+export async function setStoredLanguage(lng: string): Promise<void> {
+  try {
+<<<<<<< Updated upstream
+    return (await import('expo-localization')) as LocalizationLike;
+  } catch {
+    return null;
+  }
+}
+
 export type SupportedLanguage = 'en' | 'es' | 'fr' | 'de' | 'pt' | 'ja' | 'zh' | 'ro' | 'it';
 
 export type SupportedLanguageOption = {
@@ -1141,28 +1159,27 @@ export function resolveLanguage(value?: string | null): SupportedLanguage {
 
 export async function getStoredLanguage(): Promise<SupportedLanguage> {
   try {
-    const stored = await AsyncStorage.getItem(LANGUAGE_KEY);
+    const storage = await getAsyncStorage();
+    const stored = await storage?.getItem(storageKey);
     if (stored) {
       return resolveLanguage(stored);
-    }
-  } catch (e) {}
-  return 'en';
-}
-
-export async function setStoredLanguage(lng: string): Promise<void> {
-  try {
+=======
     await AsyncStorage.setItem(LANGUAGE_KEY, lng);
+    
     if (!i18n.isInitialized) {
       await initializeI18n();
+>>>>>>> Stashed changes
     }
+
     const resources = i18n.services?.resourceStore?.data || { en: {} };
     const supportedLangs = Object.keys(resources);
-    const targetLng = supportedLangs.includes(lng) ? lng : 'en';
-    if (i18n.language !== targetLng && typeof i18n.changeLanguage === 'function') {
+    const targetLng = supportedLangs.includes(lng) ? lng : "en";
+
+    if (i18n.language !== targetLng && typeof i18n.changeLanguage === "function") {
       await i18n.changeLanguage(targetLng);
     }
   } catch (error) {
-    console.warn('Failed to set stored language:', error);
+    console.warn("Failed to set stored language:", error);
   }
 }
 
@@ -1170,5 +1187,3 @@ export function getLocalizedText(key: string, lng?: any): string {
   const i18nInst = require('i18next').default || require('i18next');
   return i18nInst.isInitialized && typeof i18nInst.t === 'function' ? (i18nInst.t(key, { lng: lng || i18nInst.language }) || key) : key;
 }
-
-export function getSupportedLanguages() { return [{code:"en",label:"English"}, {code:"es",label:"Spanish"}, {code:"fr",label:"French"}, {code:"de",label:"German"}, {code:"pt",label:"Portuguese"}, {code:"ro",label:"Romanian"}, {code:"it",label:"Italian"}]; }

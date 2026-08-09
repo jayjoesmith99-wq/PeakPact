@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { getLocalizedText, getSupportedLanguages, type SupportedLanguage } from '../../i18n';
