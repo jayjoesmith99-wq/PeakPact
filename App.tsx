@@ -1,7 +1,4 @@
 // @ts-nocheck
-// ────────────────────────────────────────────────────────────────────────────
-// PEAKPACT OS — PRODUCTION SYSTEM ARCHITECTURE (APPLE / LINEAR DESIGN SYSTEM)
-// ────────────────────────────────────────────────────────────────────────────
 
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
@@ -137,7 +134,6 @@ import {
 
 type PactStatus = "ACTIVE" | "ALERT" | "SYNCING" | "REDSTATE";
 
-// DESIGN TOKENS (90% Dark Neutrals, 8% Text, 2% Accent Green)
 const BG_COLOR = "#080808";
 const SURFACE = "#111111";
 const SECONDARY_SURFACE = "#161616";
@@ -288,7 +284,7 @@ function TabBar({
 }) {
   return (
     <View style={_tabBarSS.bar}>
-      {tabs.map((tab) => (
+      {(tabs || []).map((tab) => (
         <Pressable
           key={tab.id}
           style={_tabBarSS.item}
@@ -331,6 +327,7 @@ const _sectionSS = StyleSheet.create({
 });
 
 function SectionIntro({ intro, accent }: { intro: { title: string; body: string }; accent: string }) {
+  if (!intro) return null;
   return (
     <View style={_sectionSS.box}>
       <Text style={[_sectionSS.title, { color: accent }]}>{intro.title}</Text>
@@ -437,14 +434,15 @@ function TutorialOverlay({
   steps: Array<{ title: string; body: string; hint: string; tab: string }>;
   language: string;
 }) {
-  const current = steps[step];
+  const safeSteps = steps || [];
+  const current = safeSteps[step];
   if (!current) return null;
   return (
     <View style={_tutSS.overlay}>
       <View style={_tutSS.card}>
         <View style={_tutSS.topRow}>
           <Text style={_tutSS.stepCt}>
-            {getLocalizedText("tutorialStepLabel", language)} {step + 1} / {steps.length}
+            {getLocalizedText("tutorialStepLabel", language)} {step + 1} / {safeSteps.length}
           </Text>
           <Pressable onPress={onSkip}>
             <Text style={_tutSS.skip}>
@@ -453,7 +451,7 @@ function TutorialOverlay({
           </Pressable>
         </View>
         <View style={_tutSS.progRow}>
-          {steps.map((_, i) => (
+          {safeSteps.map((_, i) => (
             <View
               key={i}
               style={[
@@ -479,7 +477,7 @@ function TutorialOverlay({
             onPress={onNext}
           >
             <Text style={_tutSS.btnNxTxt}>
-              {step === steps.length - 1 ? getLocalizedText("tutorialCompleteLabel", language) : getLocalizedText("tutorialNextLabel", language)}
+              {step === safeSteps.length - 1 ? getLocalizedText("tutorialCompleteLabel", language) : getLocalizedText("tutorialNextLabel", language)}
             </Text>
           </Pressable>
         </View>
@@ -570,7 +568,7 @@ export default function App() {
   const [executionCountdown, setExecutionCountdown] = useState(5);
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [tutorialCompleted, setTutorialCompleted] = useState(false);
-  const tutorialSteps = useMemo(() => getTutorialSteps(language), [language]);
+  const tutorialSteps = useMemo(() => getTutorialSteps(language) || [], [language]);
   const mainScrollRef = useRef<ScrollView>(null);
   const [leaveSquadCountdown, setLeaveSquadCountdown] = useState(0);
   const leaveSquadPulse = useRef(new Animated.Value(1)).current;
@@ -955,11 +953,11 @@ export default function App() {
       await setStoredLanguage(resolved);
       if (persisted) {
         setLanguage(resolved);
-        setOnboardingSeen(persisted.onboardingSeen);
-        setSquads(persisted.squads.length > 0 ? persisted.squads : createSeedSquads());
-        setActiveSquadId(persisted.activeSquadId);
+        setOnboardingSeen(persisted.onboardingSeen ?? false);
+        setSquads((persisted.squads ?? []).length > 0 ? persisted.squads : createSeedSquads());
+        setActiveSquadId(persisted.activeSquadId ?? null);
         setOwnedDesignTemplates(
-          persisted.ownedDesignTemplates.length > 0 ? persisted.ownedDesignTemplates : ["core"],
+          (persisted.ownedDesignTemplates ?? []).length > 0 ? persisted.ownedDesignTemplates : ["core"],
         );
         setSelectedDesignTemplateId(persisted.selectedDesignTemplateId ?? "core");
       } else {
@@ -1083,12 +1081,12 @@ export default function App() {
     activeUserId,
   ]);
 
-  const queueCount = useMemo(() => state.queue.length, [state.queue.length]);
+  const queueCount = useMemo(() => state.queue?.length || 0, [state.queue?.length]);
 
   const appendLine = (line: string) => {
     setState((prev) => ({
       ...prev,
-      terminalLines: [...prev.terminalLines, line].slice(-14),
+      terminalLines: [...(prev.terminalLines || []), line].slice(-14),
     }));
   };
 
@@ -1292,7 +1290,7 @@ export default function App() {
         setState((prev) => ({
           ...prev,
           queue: [
-            ...prev.queue,
+            ...(prev.queue || []),
             {
               ...entry,
               result: mergedVerdict.response,
@@ -1304,8 +1302,8 @@ export default function App() {
             },
           ],
           status: "SYNCING" as PactStatus,
-          terminalLines: [...prev.terminalLines, `> OFFLINE QUEUE LOCKED: ${trimmed}`].slice(-14),
-          overseerLines: [...prev.overseerLines, "> QUEUE LOCKED."].slice(-8),
+          terminalLines: [...(prev.terminalLines || []), `> OFFLINE QUEUE LOCKED: ${trimmed}`].slice(-14),
+          overseerLines: [...(prev.overseerLines || []), "> QUEUE LOCKED."].slice(-8),
         }));
         setDraft("");
         setStatusMessage("QUEUED FOR SYNC");
@@ -1352,19 +1350,19 @@ export default function App() {
         state.level,
         nextLevel,
         language,
-      );
+      ) || [];
 
       setState((prev) => ({
         ...prev,
         ...nextState,
         terminalLines: [
-          ...prev.terminalLines,
+          ...(prev.terminalLines || []),
           mergedVerdict.response,
           ...(rejectionConsequence ? [rejectionConsequence.terminalLine] : []),
           ...newlyUnlockedEpisodes.map((episode) => `> NARRATIVE UNLOCKED: ${episode.title}`),
         ].slice(-14),
         overseerLines: [
-          ...prev.overseerLines,
+          ...(prev.overseerLines || []),
           redState
             ? "> RED-STATE LOCK."
             : rejectionConsequence
@@ -1404,14 +1402,14 @@ export default function App() {
       setState((prev) => ({
         ...prev,
         status: "ALERT" as PactStatus,
-        terminalLines: [...prev.terminalLines, "> AI GATE ERROR."].slice(-14),
+        terminalLines: [...(prev.terminalLines || []), "> AI GATE ERROR."].slice(-14),
       }));
       setStatusMessage("SYNC FAILED");
     }
   };
 
   const syncQueue = async () => {
-    if (state.queue.length === 0) {
+    if (!state.queue || state.queue.length === 0) {
       appendLine("> SYNC QUEUE EMPTY.");
       return;
     }
@@ -1423,24 +1421,24 @@ export default function App() {
       state.level,
       nextLevel,
       language,
-    );
+    ) || [];
 
     setState((prev) => ({
       ...prev,
       pp: prev.pp + totalPp,
       level: nextLevel,
       xp: nextXp,
-      streak: prev.streak + prev.queue.length,
+      streak: prev.streak + (prev.queue || []).length,
       queue: [],
       status: "ACTIVE" as PactStatus,
       redState: false,
       terminalLines: [
-        ...prev.terminalLines,
+        ...(prev.terminalLines || []),
         `> SYNC COMPLETE. +${totalPp} PP.`,
         ...newlyUnlockedEpisodes.map((episode) => `> NARRATIVE UNLOCKED: ${episode.title}`),
       ].slice(-14),
       overseerLines: [
-        ...prev.overseerLines,
+        ...(prev.overseerLines || []),
         "> QUEUE CLEARED.",
       ].slice(-8),
     }));
@@ -1450,14 +1448,14 @@ export default function App() {
         user_id: activeUserId ?? "local-user",
         level: nextLevel,
         pp: state.pp + totalPp,
-        streak: state.streak + state.queue.length,
+        streak: state.streak + (state.queue || []).length,
         red_state: false,
         last_pact_date: state.lastPactDate,
         active_pact_deadline: state.activePactDeadline,
         extensions_used: state.extensionsUsed,
         updated_at: new Date().toISOString(),
       },
-      state.queue.map((item) => ({
+      (state.queue || []).map((item) => ({
         user_id: activeUserId ?? "local-user",
         content: item.text,
         result: item.result,
@@ -1512,7 +1510,7 @@ export default function App() {
       offline: !prev.offline,
       status: prev.offline ? "ACTIVE" : "SYNCING",
       terminalLines: [
-        ...prev.terminalLines,
+        ...(prev.terminalLines || []),
         prev.offline ? "> OFFLINE MODE DISENGAGED." : "> OFFLINE MODE ENGAGED.",
       ].slice(-14),
     }));
@@ -1579,7 +1577,7 @@ export default function App() {
       redState: recoveryOutcome.nextRedState,
       levelFlash: false,
       terminalLines: [
-        ...prev.terminalLines,
+        ...(prev.terminalLines || []),
         `> RECOVER // COST ${stabilizationCost} PP`,
       ].slice(-14),
     }));
@@ -1609,21 +1607,21 @@ export default function App() {
   const handleTutorialNext = useCallback(() => {
     if (tutorialStep === null) return;
     const next = tutorialStep + 1;
-    if (next >= tutorialSteps.length) {
+    if (next >= (tutorialSteps || []).length) {
       setTutorialStep(null);
       setTutorialCompleted(true);
       void AsyncStorage.setItem("@peakpact/tutorial-done", "true");
     } else {
-      const nextTab = tutorialSteps[next]?.tab as AppTab | undefined;
+      const nextTab = (tutorialSteps || [])[next]?.tab as AppTab | undefined;
       setTutorialStep(next);
       if (nextTab) handleTabPress(nextTab);
     }
-  }, [tutorialStep, tutorialSteps.length, tutorialSteps, handleTabPress]);
+  }, [tutorialStep, tutorialSteps, handleTabPress]);
 
   const handleTutorialPrev = useCallback(() => {
     if (!tutorialStep) return;
     const prev = tutorialStep - 1;
-    const prevTab = tutorialSteps[prev]?.tab as AppTab | undefined;
+    const prevTab = (tutorialSteps || [])[prev]?.tab as AppTab | undefined;
     setTutorialStep(prev);
     if (prevTab) handleTabPress(prevTab);
   }, [tutorialStep, tutorialSteps, handleTabPress]);
@@ -1648,7 +1646,7 @@ export default function App() {
       goal: squadGoal.trim() || "Complete 5 shared missions this week",
       plan: effectivePlan,
     });
-    setSquads((prev) => [nextSquad, ...prev]);
+    setSquads((prev) => [nextSquad, ...(prev || [])]);
     setActiveSquadId(nextSquad.id);
     setSquadName("");
     setSquadDescription("");
@@ -1664,7 +1662,7 @@ export default function App() {
       return;
     }
     const result = joinSquad(
-      squads,
+      squads || [],
       squadJoinCode.trim().toUpperCase(),
       operatorCodename,
       effectivePlan,
@@ -1673,7 +1671,7 @@ export default function App() {
       setStatusMessage(result.error.toUpperCase());
       return;
     }
-    setSquads([...squads]);
+    setSquads([...(squads || [])]);
     setActiveSquadId(result.squad?.id ?? null);
     setSquadJoinCode("");
     setStatusMessage(`JOINED SQUAD: ${result.squad?.name}`);
@@ -1707,7 +1705,7 @@ export default function App() {
   const handleTemplatePurchase = (templateId: DesignTemplateId) => {
     const result = purchaseDesignTemplate({
       pp: state.pp,
-      ownedTemplateIds: ownedDesignTemplates,
+      ownedTemplateIds: ownedDesignTemplates || [],
       selectedTemplateId: selectedDesignTemplateId,
       templateId,
     });
@@ -1723,7 +1721,7 @@ export default function App() {
       return;
     }
 
-    setOwnedDesignTemplates(result.ownedTemplateIds);
+    setOwnedDesignTemplates(result.ownedTemplateIds || []);
     setSelectedDesignTemplateId(result.selectedTemplateId as DesignTemplateId);
     setState((prev) => ({ ...prev, pp: result.nextPP }));
     setTemplateMessage(`THEME UNLOCKED: ${getDesignTemplateById(templateId)?.name ?? "THEME"}.`);
@@ -1770,7 +1768,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {!onboardingSeen ? (
+      {!onboardingSeen && firstSessionGuide ? (
         <View style={styles.onboardingOverlay}>
           <View style={styles.onboardingCard}>
             <Text style={styles.onboardingLabel}>{getLocalizedText("onboardingWelcomeLabel", language)}</Text>
@@ -1779,7 +1777,7 @@ export default function App() {
             </Text>
             <Text style={styles.onboardingBody}>{firstSessionGuide.body}</Text>
             <View style={styles.onboardingSteps}>
-              {firstSessionGuide.steps.map((step) => (
+              {(firstSessionGuide?.steps || []).map((step) => (
                 <Text key={step.title} style={styles.onboardingStep}>
                   • {step.title}: {step.body}
                 </Text>
@@ -1825,11 +1823,10 @@ export default function App() {
           </View>
         )}
 
-        <TabBar active={activeTab} onPress={handleTabPress} accent={ACCENT_GREEN} tabs={appTabs} />
+        <TabBar active={activeTab} onPress={handleTabPress} accent={ACCENT_GREEN} tabs={appTabs || []} />
 
         <View style={isWeb ? styles.webColumnsRow : styles.mobileColumnWrapper}>
           
-          {/* WEB LEFT COLUMN */}
           {isWeb && (
             <ScrollView
               style={styles.webLeftCol}
@@ -1862,12 +1859,12 @@ export default function App() {
                   <View
                     style={[
                       styles.progressBarFill,
-                      { width: `${progressionView.nextLevelProgress.percent}%` },
+                      { width: `${progressionView?.nextLevelProgress?.percent || 0}%` },
                     ]}
                   />
                 </View>
                 <Text style={styles.cardSubtitleFooter}>
-                  {progressionView.nextLevelProgress.percent}% to Level {state.level + 1}
+                  {progressionView?.nextLevelProgress?.percent || 0}% to Level {state.level + 1}
                 </Text>
               </View>
 
@@ -1877,13 +1874,12 @@ export default function App() {
                   {state.redState ? "REDSTATE / BREACH" : state.offline ? "OFFLINE BUFFER" : "SYSTEM OPTIMAL"}
                 </Text>
                 <Text style={[styles.cardSubtitle, { marginTop: 4 }]}>
-                  {protocolArchetype.name}
+                  {protocolArchetype?.name || "UNKNOWN PROTOCOL"}
                 </Text>
               </View>
             </ScrollView>
           )}
 
-          {/* MAIN COLUMN */}
           <ScrollView
             ref={mainScrollRef}
             style={[styles.shell, isWeb && styles.webCenterCol]}
@@ -1905,11 +1901,10 @@ export default function App() {
                 </View>
               )}
 
-              {activeTab !== "PACT" && (
+              {activeTab !== "PACT" && tabIntros[activeTab] && (
                 <SectionIntro intro={tabIntros[activeTab]} accent={ACCENT_GREEN} />
               )}
               
-              {/* TAB: PACT */}
               <View style={[styles.tabContentContainer, { display: activeTab === "PACT" ? "flex" : "none" }]}>
                 
                 <View style={styles.heroCard}>
@@ -1931,7 +1926,7 @@ export default function App() {
                     <View style={styles.stackGapMarginTop}>
                       <TextInput
                         style={styles.input}
-                        value={contractTask}
+                        value={contractTask || ""}
                         onChangeText={setContractTask}
                         placeholder="Deep Work Session"
                         placeholderTextColor={SECONDARY_TEXT}
@@ -1945,15 +1940,15 @@ export default function App() {
                             placeholder="45 min"
                             keyboardType="numeric"
                             placeholderTextColor={SECONDARY_TEXT}
-                          />
-                           <TextInput
+                         />
+                         <TextInput
                             style={[styles.input, { flex: 1, marginBottom: 0 }]}
                             value={contractStake}
                             onChangeText={setContractStake}
                             placeholder="20 PP"
                             keyboardType="numeric"
                             placeholderTextColor={SECONDARY_TEXT}
-                          />
+                         />
                       </View>
                     </View>
 
@@ -2054,7 +2049,6 @@ export default function App() {
 
               </View>
 
-              {/* TAB: SQUAD */}
               <View style={[styles.tabContentContainer, { display: activeTab === "SQUAD" ? "flex" : "none" }]}>
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>SQUAD ACTIVITY FEED</Text>
@@ -2111,7 +2105,6 @@ export default function App() {
                 </View>
               </View>
 
-              {/* TAB: STORE */}
               <View style={[styles.tabContentContainer, { display: activeTab === "STORE" ? "flex" : "none" }]}>
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>DESIGN TEMPLATES & THEMES</Text>
@@ -2122,8 +2115,8 @@ export default function App() {
                   )}
 
                   <View style={styles.stackGapMarginTop}>
-                    {designTemplates.map((template) => {
-                      const owned = ownedDesignTemplates.includes(template.id);
+                    {(designTemplates || []).map((template) => {
+                      const owned = (ownedDesignTemplates || []).includes(template.id);
                       const selected = selectedDesignTemplateId === template.id;
                       return (
                         <View key={template.id} style={styles.storeThemeCard}>
@@ -2144,15 +2137,15 @@ export default function App() {
                            <Text style={[styles.heroSubtitle, { marginVertical: 8 }]}>{template.description}</Text>
                            
                            {!selected && (
-                             owned ? (
-                               <Pressable style={[styles.buttonSecondary, { marginTop: 8 }]} onPress={() => setSelectedDesignTemplateId(template.id as DesignTemplateId)}>
-                                  <Text style={styles.buttonSecondaryText}>APPLY THEME</Text>
-                               </Pressable>
-                             ) : (
-                               <Pressable style={[styles.buttonSecondary, { marginTop: 8 }]} onPress={() => handleTemplatePurchase(template.id as DesignTemplateId)}>
-                                  <Text style={styles.buttonSecondaryText}>UNLOCK THEME</Text>
-                               </Pressable>
-                             )
+                              owned ? (
+                                <Pressable style={[styles.buttonSecondary, { marginTop: 8 }]} onPress={() => setSelectedDesignTemplateId(template.id as DesignTemplateId)}>
+                                   <Text style={styles.buttonSecondaryText}>APPLY THEME</Text>
+                                </Pressable>
+                              ) : (
+                                <Pressable style={[styles.buttonSecondary, { marginTop: 8 }]} onPress={() => handleTemplatePurchase(template.id as DesignTemplateId)}>
+                                   <Text style={styles.buttonSecondaryText}>UNLOCK THEME</Text>
+                                </Pressable>
+                              )
                            )}
                         </View>
                       );
@@ -2165,7 +2158,6 @@ export default function App() {
                 </View>
               </View>
 
-              {/* TAB: PROFILE */}
               <View style={[styles.tabContentContainer, { display: activeTab === "PROFILE" ? "flex" : "none" }]}>
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>OPERATOR DOSSIER</Text>
@@ -2188,9 +2180,9 @@ export default function App() {
 
                   <View style={[styles.separator, { marginVertical: 20 }]} />
 
-                  <Text style={[styles.cardHeaderLabel, { marginBottom: 12 }]}>NARRATIVE REWARDS UNLOCKED ({narrativeProgress.unlockedCount}/{narrativeProgress.totalCount})</Text>
+                  <Text style={[styles.cardHeaderLabel, { marginBottom: 12 }]}>NARRATIVE REWARDS UNLOCKED ({narrativeProgress?.unlockedCount || 0}/{(narrativeProgress?.totalCount || 0)})</Text>
                   <View style={{ gap: 10 }}>
-                     {narrativeProgress.episodes.slice(0, 3).map((ep) => (
+                     {(narrativeProgress?.episodes || []).slice(0, 3).map((ep) => (
                         <View key={ep.title} style={styles.narrativeRewardRow}>
                            <Text style={[styles.cardSubtitle, { color: PRIMARY_TEXT }]}>{ep.title}</Text>
                            <Text style={[styles.cardHeaderLabel, { color: ep.unlocked ? ACCENT_GREEN : SECONDARY_TEXT }]}>
@@ -2202,14 +2194,13 @@ export default function App() {
                 </View>
               </View>
 
-              {/* TAB: SYSTEM */}
               <View style={[styles.tabContentContainer, { display: activeTab === "SYSTEM" ? "flex" : "none" }]}>
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>SYSTEM PREFERENCES</Text>
                   
                   <Text style={[styles.cardHeaderLabel, { marginTop: 16, marginBottom: 8 }]}>INTERFACE LANGUAGE</Text>
                   <View style={styles.languagePickerRow}>
-                    {getSupportedLanguages().map((opt) => (
+                    {(getSupportedLanguages() || []).map((opt) => (
                       <Pressable
                         key={opt.code}
                         style={[
@@ -2249,7 +2240,6 @@ export default function App() {
             </View>
           </ScrollView>
 
-          {/* WEB RIGHT COLUMN */}
           {isWeb && (
             <ScrollView
               style={styles.webRightCol}
@@ -2281,22 +2271,22 @@ export default function App() {
 
               <View style={styles.card}>
                 <Text style={styles.cardHeaderLabel}>DAILY CHALLENGE</Text>
-                <Text style={[styles.cardTitle, { marginTop: 6, fontSize: 16 }]}>{dailyChallenge.title}</Text>
-                <Text style={[styles.heroSubtitle, { marginTop: 6 }]}>{dailyChallenge.body}</Text>
+                <Text style={[styles.cardTitle, { marginTop: 6, fontSize: 16 }]}>{dailyChallenge?.title || ""}</Text>
+                <Text style={[styles.heroSubtitle, { marginTop: 6 }]}>{dailyChallenge?.body || ""}</Text>
               </View>
             </ScrollView>
           )}
 
         </View>
 
-        {tutorialStep !== null && (
+        {tutorialStep !== null && (tutorialSteps || []).length > 0 && (
           <TutorialOverlay
             step={tutorialStep}
             accent={ACCENT_GREEN}
             onNext={handleTutorialNext}
             onPrev={handleTutorialPrev}
             onSkip={handleTutorialSkip}
-            steps={tutorialSteps}
+            steps={tutorialSteps || []}
             language={language}
           />
         )}
@@ -2304,10 +2294,6 @@ export default function App() {
     </SafeAreaView>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// APPLICATION STYLES (APPLE / LINEAR / NOTION OS DESIGN SYSTEM SPECIFICATION)
-// ────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -2333,7 +2319,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // CARDS & SYSTEM SHELLS
   card: {
     backgroundColor: SURFACE,
     borderRadius: 24,
@@ -2390,7 +2375,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // INPUTS
   input: {
     backgroundColor: "#0D0F12",
     borderRadius: 16,
@@ -2401,7 +2385,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // BUTTONS
   buttonPrimary: {
     backgroundColor: ACCENT_GREEN,
     height: 64,
@@ -2441,7 +2424,6 @@ const styles = StyleSheet.create({
     borderColor: BORDER_COLOR,
   },
 
-  // QUICK DEPLOY GRID
   quickDeployGrid: {
     flexDirection: "row",
   },
@@ -2468,7 +2450,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
 
-  // STATS & METRICS GRID
   statsRowGrid: {
     flexDirection: "row",
   },
@@ -2510,7 +2491,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // LAYOUT HELPERS REPLACING GAP
   stackGap: {
     marginBottom: 12,
   },
@@ -2525,7 +2505,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  // MOBILE GREETING
   mobileTopGreetingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2556,7 +2535,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // EXECUTION TIMER
   timerDialLarge: {
     fontSize: 64,
     fontWeight: "700",
@@ -2564,7 +2542,6 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
 
-  // SQUAD & ACTIVITY FEED
   activityFeedRow: {
     backgroundColor: SECONDARY_SURFACE,
     borderRadius: 16,
@@ -2617,7 +2594,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // STORE THEME CARDS
   storeThemeCard: {
     backgroundColor: SECONDARY_SURFACE,
     borderRadius: 20,
@@ -2640,7 +2616,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // PROFILE / NARRATIVE
   narrativeRewardRow: {
     backgroundColor: SECONDARY_SURFACE,
     borderRadius: 14,
@@ -2652,7 +2627,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // SYSTEM / LANGUAGE
   languagePickerRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -2678,7 +2652,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // MISC UTILS
   separator: {
     height: 1,
     backgroundColor: BORDER_COLOR,
@@ -2695,7 +2668,6 @@ const styles = StyleSheet.create({
     backgroundColor: ACCENT_GREEN,
   },
 
-  // ONBOARDING MODAL STYLES
   onboardingOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100,
@@ -2760,7 +2732,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // WEB LAYOUT SPECIFICATIONS
   mobileColumnWrapper: { flex: 1 },
   webColumnsRow: { flex: 1, flexDirection: "row" },
   webGlobalHeader: {
