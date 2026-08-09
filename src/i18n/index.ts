@@ -31,7 +31,6 @@ export async function getStoredLanguage(): Promise<string> {
 
 export async function setStoredLanguage(lng: string): Promise<void> {
   try {
-<<<<<<< Updated upstream
     return (await import('expo-localization')) as LocalizationLike;
   } catch {
     return null;
@@ -1159,27 +1158,28 @@ export function resolveLanguage(value?: string | null): SupportedLanguage {
 
 export async function getStoredLanguage(): Promise<SupportedLanguage> {
   try {
-    const storage = await getAsyncStorage();
-    const stored = await storage?.getItem(storageKey);
+    const stored = await AsyncStorage.getItem(LANGUAGE_KEY);
     if (stored) {
       return resolveLanguage(stored);
-=======
+    }
+  } catch (e) {}
+  return 'en';
+}
+
+export async function setStoredLanguage(lng: string): Promise<void> {
+  try {
     await AsyncStorage.setItem(LANGUAGE_KEY, lng);
-    
     if (!i18n.isInitialized) {
       await initializeI18n();
->>>>>>> Stashed changes
     }
-
     const resources = i18n.services?.resourceStore?.data || { en: {} };
     const supportedLangs = Object.keys(resources);
-    const targetLng = supportedLangs.includes(lng) ? lng : "en";
-
-    if (i18n.language !== targetLng && typeof i18n.changeLanguage === "function") {
+    const targetLng = supportedLangs.includes(lng) ? lng : 'en';
+    if (i18n.language !== targetLng && typeof i18n.changeLanguage === 'function') {
       await i18n.changeLanguage(targetLng);
     }
   } catch (error) {
-    console.warn("Failed to set stored language:", error);
+    console.warn('Failed to set stored language:', error);
   }
 }
 
