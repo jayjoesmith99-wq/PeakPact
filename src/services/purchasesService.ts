@@ -8,6 +8,7 @@ export type PurchasePlan = {
 
 export type PurchasePlanSummary = {
   monthly: PurchasePlan;
+  yearly: PurchasePlan;
   lifetime: PurchasePlan;
 };
 
@@ -18,7 +19,7 @@ export type EntitlementStatus = {
   message: string;
 };
 
-const REVENUECAT_API_KEY = 'test_EkRWwTbbsUcXStanIWZNYLGIowZ';
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
 
 let purchasesModule: any = null;
 let logLevelModule: { DEBUG?: string } | null = null;
@@ -60,17 +61,24 @@ function extractActiveProductIds(value: unknown): string[] {
 export function getPurchasePlanSummary(): PurchasePlanSummary {
   return {
     monthly: {
-      id: 'monthly',
-      title: 'PeakPact Pro',
-      description: 'Unlock unlimited mission planning, analytics, and premium themes.',
-      price: '$4.99/mo',
+      id: 'premium_monthly',
+      title: 'PeakPact Premium Monthly',
+      description: 'Unlock elite guidance, unlimited squads, and premium execution intelligence.',
+      price: '$9.99/mo',
+      enabled: true,
+    },
+    yearly: {
+      id: 'premium_yearly',
+      title: 'PeakPact Premium Yearly',
+      description: 'One year of elite features with discounted annual pricing.',
+      price: '$79/year',
       enabled: true,
     },
     lifetime: {
-      id: 'lifetime',
-      title: 'PeakPact Lifetime',
-      description: 'One-time access to premium features and all current themes.',
-      price: '$29.99',
+      id: 'lifetime_premium',
+      title: 'PeakPact Premium Lifetime',
+      description: 'One-time permanent unlock of all premium functionality.',
+      price: '$199',
       enabled: true,
     },
   };
@@ -84,6 +92,15 @@ export async function initializePurchases(): Promise<EntitlementStatus> {
       activeProductIds: [],
       source: 'disabled',
       message: 'Purchases are unavailable in this build.',
+    };
+  }
+
+  if (!REVENUECAT_API_KEY) {
+    return {
+      isEntitled: false,
+      activeProductIds: [],
+      source: 'disabled',
+      message: 'RevenueCat key missing. Set EXPO_PUBLIC_REVENUECAT_API_KEY.',
     };
   }
 

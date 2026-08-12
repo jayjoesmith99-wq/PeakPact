@@ -1128,6 +1128,8 @@ function normalizeLanguage(value?: string | null): SupportedLanguage {
   if (lowered.startsWith('pt')) return 'pt';
   if (lowered.startsWith('ja')) return 'ja';
   if (lowered.startsWith('zh')) return 'zh';
+  if (lowered.startsWith('ro')) return 'ro';
+  if (lowered.startsWith('it')) return 'it';
   return 'en';
 }
 
@@ -1168,7 +1170,30 @@ export async function setStoredLanguage(lng: string): Promise<void> {
 
 export function getLocalizedText(key: string, lng?: any): string {
   const i18nInst = require('i18next').default || require('i18next');
-  return i18nInst.isInitialized && typeof i18nInst.t === 'function' ? (i18nInst.t(key, { lng: lng || i18nInst.language }) || key) : key;
+  const resolved = resolveLanguage(lng || i18nInst.language || 'en');
+
+  if (i18nInst.isInitialized && typeof i18nInst.t === 'function') {
+    const translated = i18nInst.t(key, { lng: resolved });
+    if (typeof translated === 'string' && translated !== key) {
+      return translated;
+    }
+  }
+
+  return (resources as Record<string, { translation: Record<string, string> }>)[resolved]?.translation[key]
+    ?? resources.en.translation[key as keyof typeof resources.en.translation]
+    ?? key;
 }
 
-export function getSupportedLanguages() { return [{code:"en",label:"English"}, {code:"es",label:"Spanish"}, {code:"fr",label:"French"}, {code:"de",label:"German"}, {code:"pt",label:"Portuguese"}, {code:"ro",label:"Romanian"}, {code:"it",label:"Italian"}]; }
+export function getSupportedLanguages() {
+  return [
+    { code: 'en', label: 'English' },
+    { code: 'ro', label: 'Romanian' },
+    { code: 'it', label: 'Italian' },
+    { code: 'es', label: 'Spanish' },
+    { code: 'fr', label: 'French' },
+    { code: 'de', label: 'German' },
+    { code: 'pt', label: 'Portuguese' },
+    { code: 'ja', label: 'Japanese' },
+    { code: 'zh', label: 'Chinese' },
+  ];
+}

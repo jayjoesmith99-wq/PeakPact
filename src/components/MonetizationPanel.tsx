@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ProductPlan } from '../services/productPlan';
 
 type MonetizationPanelProps = {
@@ -12,34 +12,34 @@ type MonetizationPanelProps = {
 
 const tiers = [
   {
-    title: 'BASIC // DISCIPLINE CORE',
-    detail: 'Manual pact logging, contract verification, narrative unlocks, mission viewing, offline safety, and the full strict core loop.',
-    price: 'Included // In-app economy uses PP',
+    title: 'Core Discipline',
+    detail: 'Mission contracts, verification loops, progression, squads, and offline safety.',
+    price: 'Included',
     badge: 'FREE',
   },
   {
-    title: 'PREMIUM // CONVENIENCE OVERRIDES',
-    detail: 'Mission autoload, voice capture, time dilation, and +100 free PP each monthly billing cycle for operators who want less friction.',
-    price: '699 PP monthly (EUR 6.99 at checkout)',
-    badge: 'BEST FOR BUILDERS',
+    title: 'Premium Monthly',
+    detail: 'Voice capture, reduced friction, and premium execution intelligence.',
+    price: 'EUR 6.99 / month',
+    badge: 'MOST FLEXIBLE',
   },
   {
-    title: 'PREMIUM // YEARLY COMMAND PASS',
-    detail: 'All premium conveniences at the best value for committed operators, plus +1800 free PP yearly and lower friction at scale.',
-    price: '5999 PP yearly (EUR 59.99 at checkout)',
+    title: 'Premium Yearly',
+    detail: 'Full premium stack with the strongest annual value profile.',
+    price: 'EUR 59.99 / year',
     badge: 'BEST VALUE',
   },
   {
-    title: 'PP PACKS // OPTIONAL TOP-UP',
-    detail: 'Optional PP top-up packs for users who want to pre-fund the in-app PP economy and extend their command window.',
-    price: 'EUR checkout with exact 1 PP = EUR 0.01 conversion',
-    badge: 'TOP-UP',
+    title: 'Lifetime Premium',
+    detail: 'Permanent premium unlock for users building long-term identity systems.',
+    price: 'One-time lifetime purchase',
+    badge: 'ONE-TIME',
   },
   {
-    title: 'DESIGN TEMPLATES // VISUAL PRESTIGE TIERS',
-    detail: 'Terminal/Cyber-Dungeon at 180 PP, Mecha/HUD Pilot at 260 PP, LitRPG Stat Sheet at 260 PP, and Apex Megacorp Executive OS at 320 PP. Buy once, keep permanently.',
+    title: 'Design Prestige Tiers',
+    detail: 'Permanent visual themes and premium interface packs purchased once.',
     price: '180 / 260 / 320 PP',
-    badge: 'STYLE ECONOMY',
+    badge: 'STYLE',
   },
 ];
 
@@ -48,25 +48,28 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
     return null;
   }
 
+  const isWeb = Platform.OS === 'web';
+
   return (
-    <View style={[styles.panel, { borderColor: accent }]}>
-      <Text style={[styles.header, { color: accent }]}>[ SYSTEM OVERRIDES // PREMIUM ASCENSION ]</Text>
-      <Text style={[styles.body, { color: accent }]}>PeakPact is built for operators who want discipline without friction. The core loop stays free; premium removes the drag so your focus stays on execution.</Text>
+    <View style={[styles.panel, isWeb && styles.panelWeb]}>
+      <Text style={styles.eyebrow}>Premium Access</Text>
+      <Text style={styles.header}>Apple-grade calm. WHOOP-grade insight.</Text>
+      <Text style={styles.body}>PeakPact Core remains complete and free. Premium adds speed, intelligence, and sustained consistency under pressure.</Text>
       
       <View style={styles.statusCard}>
-        <Text style={[styles.statusLabel, { color: accent }]}>CURRENT STATUS</Text>
+        <Text style={styles.statusLabel}>Current Plan</Text>
         <Text style={styles.statusValue}>{plan}</Text>
         {isDeviceTrialActive ? (
-          <Text style={styles.statusTrail}>DEVICE TRIAL ACTIVE • PREMIUM ACCESS REMAINS LIVE FOR {trialDaysRemaining} MORE DAY(S)</Text>
+          <Text style={styles.statusTrail}>Device trial active. Premium access remains live for {trialDaysRemaining} more day(s).</Text>
         ) : null}
       </View>
       
-      <Text style={[styles.body, { color: accent }]}>Premium includes a 7-day free trial per new device, free PP bonuses of +100 PP/month or +1800 PP/year, and a four-template visual ladder mapped to 180/260/320 PP prestige economics.</Text>
+      <Text style={styles.body}>Premium includes a 7-day free trial per new device and accelerated execution workflows across mission capture, coaching, and report intelligence.</Text>
       
       {tiers.map((tier) => (
         <View key={tier.title} style={styles.tierCard}>
           <View style={styles.tierHeaderRow}>
-            <Text style={[styles.tierTitle, { color: accent }]}>{tier.title}</Text>
+            <Text style={styles.tierTitle}>{tier.title}</Text>
             <View style={styles.badge}><Text style={styles.badgeText}>{tier.badge}</Text></View>
           </View>
           <Text style={styles.tierDetail}>{tier.detail}</Text>
@@ -74,10 +77,10 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
         </View>
       ))}
 
-      <Pressable style={[styles.cta, { borderColor: accent }]}>
-        <Text style={[styles.ctaText, { color: accent }]}>UPGRADE TO PREMIUM ASCENSION</Text>
+      <Pressable style={styles.cta}>
+        <Text style={styles.ctaText}>Upgrade To Premium</Text>
       </Pressable>
-      <Text style={styles.footer}>Discipline stays free. Friction is premium.</Text>
+      <Text style={styles.footer}>Discipline stays free. Friction removal is premium.</Text>
     </View>
   );
 }
@@ -85,56 +88,69 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
 const styles = StyleSheet.create({
   panel: {
     borderWidth: 1,
-    padding: 12,
+    padding: 16,
     marginBottom: 12,
-    backgroundColor: '#050b08',
-    borderRadius: 16,
+    backgroundColor: '#10161F',
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 20,
+  },
+  panelWeb: {
+    borderRadius: 24,
+    padding: 20,
+  },
+  eyebrow: {
+    color: '#95A6BA',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
   header: {
-    fontFamily: 'Courier New',
-    fontSize: 12,
-    letterSpacing: 1,
+    color: '#F4F8FC',
+    fontSize: 21,
+    fontWeight: '800',
+    letterSpacing: -0.3,
     marginBottom: 8,
   },
   statusCard: {
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 102, 0.3)',
-    padding: 10,
+    borderColor: 'rgba(255,255,255,0.16)',
+    padding: 12,
     marginBottom: 10,
-    backgroundColor: 'rgba(0, 255, 102, 0.05)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 14,
   },
   statusLabel: {
-    fontFamily: 'Courier New',
+    color: '#9EAFC2',
     fontSize: 10,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
   statusValue: {
-    color: '#f5fff8',
-    fontFamily: 'Courier New',
-    fontSize: 13,
+    color: '#F4F8FC',
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
   statusTrail: {
-    color: '#8fe7b9',
-    fontFamily: 'Courier New',
-    fontSize: 10,
+    color: '#B4D0C2',
+    fontSize: 11,
     lineHeight: 14,
   },
   body: {
-    fontFamily: 'Courier New',
-    fontSize: 11,
+    color: '#BAC7D6',
+    fontSize: 13,
     marginBottom: 10,
-    lineHeight: 16,
+    lineHeight: 20,
   },
   tierCard: {
     borderWidth: 1,
-    borderColor: '#00FF66',
-    padding: 10,
+    borderColor: 'rgba(255,255,255,0.1)',
+    padding: 12,
     marginBottom: 8,
-    backgroundColor: '#001100',
+    backgroundColor: '#141C26',
     borderRadius: 12,
   },
   tierHeaderRow: {
@@ -145,52 +161,54 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tierTitle: {
-    fontFamily: 'Courier New',
+    color: '#EAF1F8',
     fontSize: 12,
     marginBottom: 4,
+    fontWeight: '700',
   },
   tierDetail: {
-    fontFamily: 'Courier New',
-    fontSize: 10,
-    color: '#00FF66',
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#B6C2D1',
+    marginBottom: 6,
+    lineHeight: 18,
   },
   tierPrice: {
-    fontFamily: 'Courier New',
-    fontSize: 10,
-    color: '#FF0033',
+    fontSize: 12,
+    color: '#83E7B4',
+    fontWeight: '700',
   },
   badge: {
     borderWidth: 1,
-    borderColor: '#00FF66',
+    borderColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 6,
     paddingVertical: 3,
-    backgroundColor: 'rgba(0, 255, 102, 0.08)',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   badgeText: {
-    color: '#00FF66',
-    fontFamily: 'Courier New',
+    color: '#DBE4EF',
     fontSize: 8,
     letterSpacing: 1,
+    fontWeight: '700',
   },
   cta: {
     borderWidth: 1,
-    paddingVertical: 10,
+    borderColor: 'rgba(255,255,255,0.18)',
+    paddingVertical: 12,
     alignItems: 'center',
     marginTop: 6,
     marginBottom: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 255, 102, 0.06)',
+    borderRadius: 14,
+    backgroundColor: '#EFF5FB',
   },
   ctaText: {
-    fontFamily: 'Courier New',
-    fontSize: 11,
-    letterSpacing: 1.2,
+    color: '#10161F',
+    fontSize: 12,
+    letterSpacing: 0.4,
     fontWeight: '700',
   },
   footer: {
-    fontFamily: 'Courier New',
-    fontSize: 10,
-    color: '#00FF66',
+    fontSize: 11,
+    color: '#93A6BC',
   },
 });

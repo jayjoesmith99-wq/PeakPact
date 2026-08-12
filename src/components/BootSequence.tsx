@@ -1,137 +1,271 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Pressable, Text } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Audio, ResizeMode, Video } from 'expo-av';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { getLocalizedText, type SupportedLanguage } from '../services/i18n';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
-  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
-import { SupportedLanguage } from '../services/i18n';
 
-export default function BootSequence({
-  onComplete,
-  language,
-}: {
+const primaryVideo = require('../../assets/aunch-introAUDIO.MP3.mp4');
+const fallbackVideo = require('../../assets/onboarding-loop.mp4.mp4');
+const fallbackAudio = require('../../assets/sounds/welcome-elite.wav');
+
+type BootSequenceProps = {
   onComplete: () => void;
   language: SupportedLanguage;
-}) {
-  const [phase, setPhase] = useState(0);
+};
 
-  const opacity1 = useSharedValue(0);
-  const opacity2 = useSharedValue(0);
-  const scale = useSharedValue(0.95);
+export default function BootSequence({ onComplete, language }: BootSequenceProps) {
+  const [phase, setPhase] = useState<'intro' | 'lock' | 'launch'>('intro');
+  const [useFallbackVideo, setUseFallbackVideo] = useState(false);
+  const [canSkip, setCanSkip] = useState(false);
+  const videoRef = useRef<Video>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const overlayOpacity = useSharedValue(0);
+  const textOpacity = useSharedValue(0);
+  const textTranslateY = useSharedValue(18);
+  const pulseOpacity = useSharedValue(0);
+
+  const videoSource = useMemo(
+    () => (useFallbackVideo ? fallbackVideo : primaryVideo),
+    [useFallbackVideo],
+  );
 
   useEffect(() => {
-    // Sequence timing
-    scale.value = withTiming(1, { duration: 1500, easing: Easing.out(Easing.cubic) });
-    
-    opacity1.value = withTiming(1, { duration: 600 }, () => {
-      runOnJS(setPhase)(1);
-    });
+    let active = true;
 
-    const timer1 = setTimeout(() => {
-      opacity1.value = withTiming(0, { duration: 400 }, () => {
-        opacity2.value = withTiming(1, { duration: 600 }, () => {
-          runOnJS(setPhase)(2);
+    overlayOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+    textOpacity.value = withTiming(1, { duration: 680, easing: Easing.out(Easing.cubic) });
+    textTranslateY.value = withTiming(0, { duration: 680, easing: Easing.out(Easing.cubic) });
+
+    const startPlayback = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          interruptionModeIOS: 1,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          interruptionModeAndroid: 1,
+          playThroughEarpieceAndroid: false,
         });
-      });
-    }, 2500);
 
-    const timer2 = setTimeout(() => {
-      opacity2.value = withTiming(0, { duration: 500 }, () => {
-        runOnJS(onComplete)();
+        const sound = new Audio.Sound();
+        soundRef.current = sound;
+        await sound.loadAsync(fallbackAudio, {
+          shouldPlay: true,
+          isLooping: false,
+          volume: 0.72,
+          progressUpdateIntervalMillis: 250,
+        });
+      } catch {
+        // Keep flow resilient if audio cannot load on a device/runtime.
+      }
+
+      try {
+        await videoRef.current?.playAsync();
+      } catch {
+        if (active) {
+          setUseFallbackVideo(true);
+        }
+      }
+    };
+
+    const beginTimer = setTimeout(() => {
+      void startPlayback();
+    }, 120);
+
+    const skipTimer = setTimeout(() => {
+      if (active) {
+        setCanSkip(true);
+      }
+    }, 1200);
+
+    const phaseTwo = setTimeout(() => {
+      if (!active) return;
+      setPhase('lock');
+      textOpacity.value = withTiming(0, { duration: 280, easing: Easing.out(Easing.cubic) }, () => {
+        textTranslateY.value = 16;
+        textOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+        textTranslateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
       });
-    }, 5500);
+      pulseOpacity.value = withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) });
+    }, 3600);
+
+    const phaseThree = setTimeout(() => {
+      if (!active) return;
+      setPhase('launch');
+      textOpacity.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) }, () => {
+        textTranslateY.value = 16;
+        textOpacity.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
+        textTranslateY.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
+      });
+    }, 7600);
+
+    const doneTimer = setTimeout(() => {
+      if (!active) return;
+      overlayOpacity.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
+      onComplete();
+    }, 10400);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      active = false;
+      clearTimeout(beginTimer);
+      clearTimeout(skipTimer);
+      clearTimeout(phaseTwo);
+      clearTimeout(phaseThree);
+      clearTimeout(doneTimer);
+      void videoRef.current?.stopAsync();
+      void videoRef.current?.unloadAsync();
+      if (soundRef.current) {
+        void soundRef.current.stopAsync();
+        void soundRef.current.unloadAsync();
+      }
     };
-  }, [onComplete, opacity1, opacity2, scale]);
+  }, [onComplete, overlayOpacity, textOpacity, textTranslateY, pulseOpacity]);
 
-  const style1 = useAnimatedStyle(() => ({
-    opacity: opacity1.value,
-    transform: [{ scale: scale.value }],
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
   }));
 
-  const style2 = useAnimatedStyle(() => ({
-    opacity: opacity2.value,
+  const headlineStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+    transform: [{ translateY: textTranslateY.value }],
   }));
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: pulseOpacity.value,
+  }));
+
+  const handleSkip = () => {
+    void videoRef.current?.stopAsync();
+    if (soundRef.current) {
+      void soundRef.current.stopAsync();
+    }
+    onComplete();
+  };
+
+  const phaseText =
+    phase === 'intro'
+      ? getLocalizedText('welcomeIntro', language)
+      : phase === 'lock'
+        ? getLocalizedText('welcomeDirective', language)
+        : getLocalizedText('welcomeContract', language);
+
+  const phaseSubtext =
+    phase === 'intro'
+      ? getLocalizedText('introPactBody', language)
+      : phase === 'lock'
+        ? getLocalizedText('introSystemBody', language)
+        : getLocalizedText('onboardingFirstStepLabel', language);
 
   return (
-    <View style={styles.container}>
-      {phase === 1 && (
-        <Animated.View style={[styles.textContainer, style1]}>
-          <View style={styles.greenLine} />
-          <Text style={styles.text}>WE DO NOT DEFAULT TO COMFORT.</Text>
-        </Animated.View>
-      )}
+    <Animated.View style={[styles.container, containerStyle]}>
+      <Video
+        ref={videoRef}
+        source={videoSource}
+        style={styles.video}
+        resizeMode={ResizeMode.COVER}
+        isLooping={false}
+        shouldPlay
+        isMuted={false}
+        useNativeControls={false}
+        onError={() => {
+          setUseFallbackVideo(true);
+        }}
+      />
 
-      {phase >= 2 && (
-        <Animated.View style={[styles.textContainer, style2]}>
-          <Text style={styles.greenText}>PROTOCOL LOCKED.</Text>
-        </Animated.View>
-      )}
+      <View style={styles.scrim} />
+      <Animated.View style={[styles.pulseHalo, pulseStyle]} />
 
-      <Pressable style={styles.skipButton} onPress={onComplete}>
-        <Text style={styles.skipText}>SKIP SEQUENCE</Text>
-      </Pressable>
-    </View>
+      <Animated.View style={[styles.textContainer, headlineStyle]}>
+        <Text style={styles.eyebrow}>PEAKPACT</Text>
+        <Text style={styles.text}>{phaseText}</Text>
+        <Text style={styles.subText}>{phaseSubtext}</Text>
+      </Animated.View>
+
+      {canSkip ? (
+        <Pressable style={styles.skipButton} onPress={handleSkip}>
+          <Text style={styles.skipText}>SKIP INTRO</Text>
+        </Pressable>
+      ) : null}
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#080808',
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
+  video: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(2, 8, 8, 0.52)',
+  },
+  pulseHalo: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 999,
+    backgroundColor: 'rgba(118,255,3,0.16)',
+    shadowColor: '#76FF03',
+    shadowOpacity: 0.42,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: 6 },
+  },
   textContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    maxWidth: 560,
   },
-  greenLine: {
-    width: 120,
-    height: 3,
-    backgroundColor: '#76FF03',
-    marginBottom: 24,
-    shadowColor: '#76FF03',
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+  eyebrow: {
+    color: '#9CE22A',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 3.6,
+    marginBottom: 12,
   },
   text: {
     color: '#F5F5F5',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 2,
-    textAlign: 'center',
-  },
-  greenText: {
-    color: '#76FF03',
-    fontSize: 28,
+    fontSize: 33,
     fontWeight: '900',
-    letterSpacing: 3,
+    letterSpacing: 2.4,
     textAlign: 'center',
-    textShadowColor: '#76FF03',
-    textShadowRadius: 15,
+    textTransform: 'uppercase',
+  },
+  subText: {
+    color: '#D8DFDA',
+    marginTop: 12,
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: 0.9,
+    textAlign: 'center',
   },
   skipButton: {
     position: 'absolute',
-    bottom: 50,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#111111',
-    borderRadius: 8,
+    bottom: 44,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    backgroundColor: 'rgba(8, 8, 8, 0.72)',
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.16)',
   },
   skipText: {
-    color: '#A0A0A0',
+    color: '#D0D0D0',
     fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.5,
+    fontWeight: '700',
+    letterSpacing: 1.8,
   },
 });

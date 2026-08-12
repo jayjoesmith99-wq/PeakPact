@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { AccessFormState, AccessMode } from "../services/accessGate";
 
 const accessLogo = require("../../assets/logo.peakpact.png");
@@ -23,11 +23,13 @@ export default function AccessGate({
   onFieldChange: (field: keyof AccessFormState, value: string) => void;
   onSubmit: () => void;
 }) {
+  const isWeb = Platform.OS === "web";
+
   return (
     <View style={styles.container}>
       <View style={styles.backgroundGlow} />
       <View style={styles.backgroundGlowSecondary} />
-      <View style={styles.card}>
+      <View style={[styles.card, isWeb && styles.cardWeb]}>
         <View style={styles.headerRow}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>OPERATOR ACCESS</Text>
@@ -126,9 +128,18 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 24,
     shadowColor: "#25F9D5",
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: Platform.OS === "web" ? 0.2 : 0.14,
+    shadowRadius: Platform.OS === "web" ? 24 : 14,
+    shadowOffset: { width: 0, height: Platform.OS === "web" ? 10 : 6 },
+    elevation: Platform.OS === "android" ? 4 : 0,
+  },
+  cardWeb: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+    borderRadius: 30,
+    padding: 28,
+    backgroundColor: "rgba(13, 18, 28, 0.88)",
   },
   headerRow: {
     flexDirection: "row",
@@ -232,9 +243,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     shadowColor: "#4FA3FF",
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
+    shadowOpacity: Platform.OS === "web" ? 0.16 : 0.1,
+    shadowRadius: Platform.OS === "web" ? 12 : 8,
     shadowOffset: { width: 0, height: 8 },
+    elevation: Platform.OS === "android" ? 3 : 0,
   },
   submitText: {
     color: "#F7FCFF",

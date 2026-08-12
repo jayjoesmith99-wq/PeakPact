@@ -17,19 +17,25 @@ import React, {
 } from "react";
 import {
   Animated,
+  ActivityIndicator,
   AppState as NativeAppState,
+  Easing,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  Share,
 } from "react-native";
 import AccessGate from "./src/components/AccessGate";
 import BootSequence from "./src/components/BootSequence";
+import LanguageSelectionScreen from "./src/components/LanguageSelectionScreen";
+import MonetizationPanel from "./src/components/MonetizationPanel";
 import {
   buildStructuredVerification,
   submitToVerificationEngine,
@@ -134,6 +140,25 @@ import {
   purchaseDesignTemplate,
   type DesignTemplateId,
 } from "./src/services/designTemplates";
+import {
+  getEntitlementStatus,
+  restorePurchases,
+} from "./src/services/purchasesService";
+import ExecutiveDashboard from "./src/components/ExecutiveDashboard";
+import {
+  buildExecutionCoachSnapshot,
+} from "./src/services/aiExecutionCoach";
+import { buildFutureSelfSnapshot } from "./src/services/futureSelfEngine";
+import {
+  buildAnnualTransformationReport,
+  buildMonthlyTransformationReport,
+  type TransformationReport,
+} from "./src/services/transformationReports";
+import {
+  recordCrash,
+  trackEvent,
+  trackRetentionMetrics,
+} from "./src/services/telemetryService";
 
 type PactStatus = "ACTIVE" | "ALERT" | "SYNCING" | "REDSTATE";
 
@@ -149,6 +174,7 @@ const WARNING_COLOR = "#FFC857";
 const DANGER_COLOR = "#FF5252";
 
 const LOCAL_ACCESS_SESSION_KEY = "@peakpact/local-access-session";
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || "";
 
 type PactLogEntry = {
   id: string;
@@ -291,7 +317,10 @@ function TabBar({
       {tabs.map((tab) => (
         <Pressable
           key={tab.id}
-          style={_tabBarSS.item}
+          style={({ pressed }) => [
+            _tabBarSS.item,
+            pressed ? { opacity: 0.8, transform: [{ scale: 0.98 }] } : null,
+          ]}
           onPress={() => onPress(tab.id)}
         >
           <Text
@@ -512,6 +541,8 @@ export default function App() {
   const [showMonetization, setShowMonetization] = useState(false);
   const [onboardingSeen, setOnboardingSeen] = useState(false);
   const [language, setLanguage] = useState<SupportedLanguage>("en");
+  const [languageGateVisible, setLanguageGateVisible] = useState(true);
+  const [languageBootstrapped, setLanguageBootstrapped] = useState(false);
   
   const translate = useCallback(
     (key: string) => getLocalizedText(key, language),
@@ -562,6 +593,11 @@ export default function App() {
   const [activeSquadId, setActiveSquadId] = useState<string | null>(null);
   const [leaveSquadConfirmOpen, setLeaveSquadConfirmOpen] = useState(false);
   const [militaryTime, setMilitaryTime] = useState("00:00:00");
+  const [missionsCreatedToday, setMissionsCreatedToday] = useState(0);
+  const [missionsCompletedToday, setMissionsCompletedToday] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [successToastLabel, setSuccessToastLabel] = useState<string | null>(null);
+  const [hasPremiumEntitlement, setHasPremiumEntitlement] = useState(false);
   
   const isWeb = Platform.OS === "web";
   const [bootReady, setBootReady] = useState<boolean | null>(null);
@@ -574,6 +610,8 @@ export default function App() {
   const mainScrollRef = useRef<ScrollView>(null);
   const [leaveSquadCountdown, setLeaveSquadCountdown] = useState(0);
   const leaveSquadPulse = useRef(new Animated.Value(1)).current;
+  const tabTransition = useRef(new Animated.Value(1)).current;
+  const successToastAnim = useRef(new Animated.Value(0)).current;
 
   const eliteOverrideActive = isPeakPactEliteOverride(activeUserEmail, activeUserId);
   const founderPrivilegesActive = useMemo(
@@ -587,12 +625,65 @@ export default function App() {
   );
 
   const activePlan = useMemo(
-    () => resolveEffectiveProductPlan(basePlan, deviceTrialStatus.active),
-    [basePlan, deviceTrialStatus.active],
+    () => resolveEffectiveProductPlan(basePlan, deviceTrialStatus.active || hasPremiumEntitlement),
+    [basePlan, deviceTrialStatus.active, hasPremiumEntitlement],
   );
 
   const effectivePlan = eliteOverrideActive ? "PREMIUM" : activePlan;
   const planFeatures = useMemo(() => getPlanFeatures(effectivePlan), [effectivePlan]);
+
+  const coachSnapshot = useMemo(
+    () =>
+      buildExecutionCoachSnapshot({
+        streak: state.streak,
+        level: state.level,
+        xp: state.xp,
+        missionsCreatedToday,
+        missionsCompletedToday,
+        squadsCount: squads.length,
+        redState: state.redState,
+      }),
+    [
+      state.streak,
+      state.level,
+      state.xp,
+      missionsCreatedToday,
+      missionsCompletedToday,
+      squads.length,
+      state.redState,
+    ],
+  );
+
+  const futureSelfSnapshot = useMemo(
+    () =>
+      buildFutureSelfSnapshot({
+        currentIdentity: coachSnapshot.currentIdentity,
+        level: state.level,
+        streak: state.streak,
+        disciplineScore: coachSnapshot.disciplineScore,
+      }),
+    [coachSnapshot.currentIdentity, coachSnapshot.disciplineScore, state.level, state.streak],
+  );
+
+  const monthlyReport = useMemo(
+    () =>
+      buildMonthlyTransformationReport({
+        codename: operatorCodename,
+        coach: coachSnapshot,
+        future: futureSelfSnapshot,
+      }),
+    [operatorCodename, coachSnapshot, futureSelfSnapshot],
+  );
+
+  const annualReport = useMemo(
+    () =>
+      buildAnnualTransformationReport({
+        codename: operatorCodename,
+        coach: coachSnapshot,
+        future: futureSelfSnapshot,
+      }),
+    [operatorCodename, coachSnapshot, futureSelfSnapshot],
+  );
 
   const firstSessionGuide = useMemo(() => getFirstSessionGuide(language), [language]);
 
@@ -660,12 +751,95 @@ export default function App() {
     }
   }, []);
 
+  const animateSuccessToast = useCallback((label: string) => {
+    setSuccessToastLabel(label);
+    successToastAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(successToastAnim, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.delay(1000),
+      Animated.timing(successToastAnim, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => setSuccessToastLabel(null));
+  }, [successToastAnim]);
+
+  const handlePullRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    setTrialClockMs(Date.now());
+    setMissionCountdown(formatMissionCountdown(state.activePactDeadline));
+    setStatusMessage("SYSTEM REFRESHED");
+    triggerPactFeedback("impact");
+    await new Promise((resolve) => setTimeout(resolve, 380));
+    setIsRefreshing(false);
+  }, [state.activePactDeadline, triggerPactFeedback]);
+
+  useEffect(() => {
+    tabTransition.setValue(0.92);
+    Animated.timing(tabTransition, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [activeTab, tabTransition]);
+
+  useEffect(() => {
+    const successStates = [
+      "PERSISTED TO SUPABASE",
+      "QUEUE SYNCED",
+      "PREMIUM RESTORED",
+      "RECOVERY COMPLETE",
+      "VOICE TRANSCRIBED",
+    ];
+    if (successStates.includes(statusMessage)) {
+      animateSuccessToast(statusMessage);
+      triggerPactFeedback("notify");
+    }
+  }, [statusMessage, animateSuccessToast, triggerPactFeedback]);
+
   const toggleMonetization = async () => {
+    void trackEvent("premium_viewed", { tab: activeTab, plan: effectivePlan });
     try {
       await RevenueCatUI.presentPaywall();
+      void trackEvent("premium_started", { plan: effectivePlan });
     } catch (error) {
       console.error("Paywall Error:", error);
+      void recordCrash("purchase_failure", {
+        location: "toggleMonetization",
+        message: error instanceof Error ? error.message : String(error),
+      });
       setShowMonetization((previous) => !previous);
+    }
+  };
+
+  const handleRestorePremium = async () => {
+    try {
+      const result = await restorePurchases();
+      if (result.isEntitled) {
+        setHasPremiumEntitlement(true);
+        void trackEvent("premium_restored", {
+          activeProductCount: result.activeProductIds.length,
+        });
+        setStatusMessage("PREMIUM RESTORED");
+        triggerPactFeedback("notify");
+      } else {
+        setStatusMessage(result.message.toUpperCase());
+      }
+    } catch (error) {
+      void recordCrash("purchase_failure", {
+        location: "handleRestorePremium",
+        message: error instanceof Error ? error.message : String(error),
+      });
+      setStatusMessage("RESTORE FAILED");
+      triggerPactFeedback("impact");
     }
   };
 
@@ -674,14 +848,35 @@ export default function App() {
       try {
         Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         if (Platform.OS === "android" || Platform.OS === "ios") {
-          await Purchases.configure({ apiKey: "test_EkRWwTbbsUcXStanIWZNYLGIowZ" });
+          if (!REVENUECAT_API_KEY) {
+            console.warn("RevenueCat API key is missing. Set EXPO_PUBLIC_REVENUECAT_API_KEY.");
+            return;
+          }
+          await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+
+          const entitlementStatus = await getEntitlementStatus();
+          if (entitlementStatus.isEntitled) {
+            setHasPremiumEntitlement(true);
+          }
         }
       } catch (error) {
         console.error("RevenueCat Init Error:", error);
+        void recordCrash("purchase_failure", {
+          location: "setupRevenueCat",
+          message: error instanceof Error ? error.message : String(error),
+        });
       }
     };
     setupRevenueCat();
   }, []);
+
+  useEffect(() => {
+    void trackRetentionMetrics({
+      dayCount: state.streak,
+      streak: state.streak,
+      level: state.level,
+    });
+  }, [state.streak, state.level]);
 
   useEffect(() => {
     const hydrateAccessSession = async () => {
@@ -951,10 +1146,9 @@ export default function App() {
       const stored = await getStoredLanguage();
       const persisted = await loadPersistedAppState();
       const resolved = persisted?.language || stored;
-      await initializeI18n();
-      await setStoredLanguage(resolved);
+      setLanguage(resolved);
+
       if (persisted) {
-        setLanguage(resolved);
         setOnboardingSeen(persisted.onboardingSeen);
         setSquads(persisted.squads.length > 0 ? persisted.squads : createSeedSquads());
         setActiveSquadId(persisted.activeSquadId);
@@ -962,13 +1156,20 @@ export default function App() {
           persisted.ownedDesignTemplates.length > 0 ? persisted.ownedDesignTemplates : ["core"],
         );
         setSelectedDesignTemplateId(persisted.selectedDesignTemplateId ?? "core");
-      } else {
-        setLanguage(stored);
       }
+
+      setLanguageBootstrapped(true);
       setHasHydratedPersistence(true);
     };
     void hydrateLanguage();
   }, []);
+
+  const finalizeLanguageSelection = useCallback(async () => {
+    await initializeI18n();
+    await setStoredLanguage(language);
+    setLanguageGateVisible(false);
+    setStatusMessage(getLocalizedText("languageSaved", language));
+  }, [language]);
 
   useEffect(() => {
     if (!hasHydratedPersistence) return;
@@ -1187,8 +1388,14 @@ export default function App() {
     }
     setExecutionCountdown(5);
     setPactFlowMode("execution");
+    setMissionsCreatedToday((prev) => prev + 1);
+    void trackEvent("mission_created", {
+      duration: Number(contractDuration) || 0,
+      stake: Number(contractStake) || 0,
+      mode: "planning_to_execution",
+    });
     triggerPactFeedback("impact");
-  }, [appendLine, complianceConsent, draft, triggerPactFeedback]);
+  }, [appendLine, complianceConsent, draft, triggerPactFeedback, contractDuration, contractStake]);
 
   const finalizePactExecution = useCallback(async () => {
     setPactFlowMode("planning");
@@ -1400,6 +1607,12 @@ export default function App() {
       );
       setDraft("");
       setStatusMessage("PERSISTED TO SUPABASE");
+      setMissionsCompletedToday((prev) => prev + 1);
+      void trackEvent("mission_completed", {
+        verified: mergedVerdict.verified,
+        reward: adjustedReward,
+        severity: mergedVerdict.severity,
+      });
     } catch {
       setState((prev) => ({
         ...prev,
@@ -1407,6 +1620,10 @@ export default function App() {
         terminalLines: [...prev.terminalLines, "> AI GATE ERROR."].slice(-14),
       }));
       setStatusMessage("SYNC FAILED");
+      void recordCrash("sync_failure", {
+        location: "submitPact",
+        queueSize: state.queue.length,
+      });
     }
   };
 
@@ -1445,32 +1662,42 @@ export default function App() {
       ].slice(-8),
     }));
 
-    await syncProgressToSupabase(
-      {
-        user_id: activeUserId ?? "local-user",
-        level: nextLevel,
-        pp: state.pp + totalPp,
-        streak: state.streak + state.queue.length,
-        red_state: false,
-        last_pact_date: state.lastPactDate,
-        active_pact_deadline: state.activePactDeadline,
-        extensions_used: state.extensionsUsed,
-        updated_at: new Date().toISOString(),
-      },
-      state.queue.map((item) => ({
-        user_id: activeUserId ?? "local-user",
-        content: item.text,
-        result: item.result,
-        pp_awarded: item.pp,
-        created_at: new Date().toISOString(),
-        synced: true,
-        device_timestamp: item.deviceTimestamp,
-        signature: item.signature,
-        active_pact_deadline: item.activePactDeadline || state.activePactDeadline,
-        extensions_used: item.extensionsUsed ?? state.extensionsUsed,
-      })),
-    );
-    setStatusMessage("QUEUE SYNCED");
+    try {
+      await syncProgressToSupabase(
+        {
+          user_id: activeUserId ?? "local-user",
+          level: nextLevel,
+          pp: state.pp + totalPp,
+          streak: state.streak + state.queue.length,
+          red_state: false,
+          last_pact_date: state.lastPactDate,
+          active_pact_deadline: state.activePactDeadline,
+          extensions_used: state.extensionsUsed,
+          updated_at: new Date().toISOString(),
+        },
+        state.queue.map((item) => ({
+          user_id: activeUserId ?? "local-user",
+          content: item.text,
+          result: item.result,
+          pp_awarded: item.pp,
+          created_at: new Date().toISOString(),
+          synced: true,
+          device_timestamp: item.deviceTimestamp,
+          signature: item.signature,
+          active_pact_deadline: item.activePactDeadline || state.activePactDeadline,
+          extensions_used: item.extensionsUsed ?? state.extensionsUsed,
+        })),
+      );
+      setStatusMessage("QUEUE SYNCED");
+      triggerPactFeedback("notify");
+    } catch {
+      setStatusMessage("QUEUE SYNC FAILED");
+      triggerPactFeedback("impact");
+      void recordCrash("sync_failure", {
+        location: "syncQueue",
+        queueSize: state.queue.length,
+      });
+    }
   };
 
   const toggleRecording = async () => {
@@ -1520,6 +1747,7 @@ export default function App() {
 
   const handleOnboardingAdvance = () => {
     setOnboardingSeen(true);
+    void trackEvent("tutorial_completed", { step: "onboarding_advance" });
     void savePersistedAppState({
       onboardingSeen: true,
       language,
@@ -1590,6 +1818,7 @@ export default function App() {
   const changeLanguage = async (nextLanguage: SupportedLanguage) => {
     setLanguage(nextLanguage);
     await setStoredLanguage(nextLanguage);
+    void trackEvent("language_selected", { language: nextLanguage, platform: Platform.OS });
     await savePersistedAppState({
       onboardingSeen,
       language: nextLanguage,
@@ -1602,9 +1831,10 @@ export default function App() {
   };
 
   const handleTabPress = useCallback((tab: AppTab) => {
+    triggerPactFeedback("impact");
     setActiveTab(tab);
-    mainScrollRef.current?.scrollTo({ y: 0, animated: false });
-  }, []);
+    mainScrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [triggerPactFeedback]);
 
   const handleTutorialNext = useCallback(() => {
     if (tutorialStep === null) return;
@@ -1612,6 +1842,7 @@ export default function App() {
     if (next >= tutorialSteps.length) {
       setTutorialStep(null);
       setTutorialCompleted(true);
+      void trackEvent("tutorial_completed", { step: "tutorial_overlay" });
       void AsyncStorage.setItem("@peakpact/tutorial-done", "true");
     } else {
       const nextTab = tutorialSteps[next]?.tab as AppTab | undefined;
@@ -1637,6 +1868,7 @@ export default function App() {
   const handleCreateSquad = () => {
     if (!squadName.trim()) {
       setStatusMessage("SQUAD NAME REQUIRED");
+      void recordCrash("squad_failure", { location: "handleCreateSquad", reason: "name_required" });
       return;
     }
     const nextSquad = createSquad({
@@ -1656,11 +1888,14 @@ export default function App() {
     setSquadGoal("Complete 5 shared missions this week");
     setSquadVisibility("PUBLIC");
     setStatusMessage(`SQUAD READY: ${nextSquad.name}`);
+    triggerPactFeedback("notify");
+    void trackEvent("squad_created", { visibility: squadVisibility, squadsCount: squads.length + 1 });
   };
 
   const handleJoinSquad = () => {
     if (!squadJoinCode.trim()) {
       setStatusMessage("JOIN CODE REQUIRED");
+      void recordCrash("squad_failure", { location: "handleJoinSquad", reason: "join_code_required" });
       return;
     }
     const result = joinSquad(
@@ -1671,13 +1906,29 @@ export default function App() {
     );
     if (result.error) {
       setStatusMessage(result.error.toUpperCase());
+      void recordCrash("squad_failure", { location: "handleJoinSquad", reason: result.error });
       return;
     }
     setSquads([...squads]);
     setActiveSquadId(result.squad?.id ?? null);
     setSquadJoinCode("");
     setStatusMessage(`JOINED SQUAD: ${result.squad?.name}`);
+    triggerPactFeedback("notify");
+    void trackEvent("squad_joined", { squadName: result.squad?.name });
   };
+
+  const handleShareReport = useCallback(async (report: TransformationReport) => {
+    try {
+      await Share.share({
+        title: report.headline,
+        message: `${report.headline}\n\n${report.summary}\n\n${report.shareText}`,
+      });
+      triggerPactFeedback("notify");
+    } catch {
+      setStatusMessage("SHARE UNAVAILABLE");
+      triggerPactFeedback("impact");
+    }
+  }, [triggerPactFeedback]);
 
   const narrativeProgress = useMemo(
     () => getNarrativeProgress(state.level, language),
@@ -1727,16 +1978,29 @@ export default function App() {
     setSelectedDesignTemplateId(result.selectedTemplateId as DesignTemplateId);
     setState((prev) => ({ ...prev, pp: result.nextPP }));
     setTemplateMessage(`THEME UNLOCKED: ${getDesignTemplateById(templateId)?.name ?? "THEME"}.`);
+    triggerPactFeedback("notify");
   };
+
+  if (!languageBootstrapped || languageGateVisible) {
+    return (
+      <LanguageSelectionScreen
+        selectedLanguage={language}
+        onSelectLanguage={setLanguage}
+        onContinue={() => {
+          void finalizeLanguageSelection();
+        }}
+      />
+    );
+  }
 
   if (bootReady !== true) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: BG_COLOR }}>
         <StatusBar style="light" hidden />
         <BootSequence
+          language={language}
           onComplete={() => {
             setBootReady(true);
-            void AsyncStorage.setItem("@peakpact/boot-seen", "true");
           }}
         />
       </SafeAreaView>
@@ -1747,6 +2011,7 @@ export default function App() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: BG_COLOR, justifyContent: "center", alignItems: "center" }}>
         <StatusBar style="light" />
+        <ActivityIndicator size="small" color={ACCENT_GREEN} />
         <Text style={{ color: SECONDARY_TEXT, fontSize: 12, letterSpacing: 2 }}>PEAKPACT</Text>
         <Text style={{ color: PRIMARY_TEXT, fontSize: 24, fontWeight: "700", marginTop: 8 }}>RESTORING SESSION</Text>
       </SafeAreaView>
@@ -1794,7 +2059,7 @@ export default function App() {
               </Text>
             </View>
             <Pressable
-              style={styles.buttonPrimary}
+              style={({ pressed }) => [styles.buttonPrimary, pressed && styles.buttonPrimaryPressed]}
               onPress={handleOnboardingAdvance}
             >
               <Text style={styles.buttonPrimaryText}>
@@ -1826,6 +2091,28 @@ export default function App() {
         )}
 
         <TabBar active={activeTab} onPress={handleTabPress} accent={ACCENT_GREEN} tabs={appTabs} />
+
+        {successToastLabel ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.successToast,
+              {
+                opacity: successToastAnim,
+                transform: [
+                  {
+                    translateY: successToastAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-8, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Text style={styles.successToastText}>{successToastLabel}</Text>
+          </Animated.View>
+        ) : null}
 
         <View style={isWeb ? styles.webColumnsRow : styles.mobileColumnWrapper}>
           
@@ -1890,8 +2177,36 @@ export default function App() {
             contentContainerStyle={styles.shellContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              !isWeb ? (
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={() => {
+                    void handlePullRefresh();
+                  }}
+                  tintColor={ACCENT_GREEN}
+                  colors={[ACCENT_GREEN]}
+                  progressBackgroundColor={SURFACE}
+                />
+              ) : undefined
+            }
           >
-            <View style={styles.appShell}>
+            <Animated.View
+              style={[
+                styles.appShell,
+                {
+                  opacity: tabTransition,
+                  transform: [
+                    {
+                      translateY: tabTransition.interpolate({
+                        inputRange: [0.92, 1],
+                        outputRange: [8, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
               
               {!isWeb && (
                 <View style={styles.mobileTopGreetingRow}>
@@ -1966,7 +2281,7 @@ export default function App() {
                       ].map((macro) => (
                         <Pressable
                           key={macro.label}
-                          style={styles.quickDeployCard}
+                          style={({ pressed }) => [styles.quickDeployCard, pressed && styles.quickDeployCardPressed]}
                           onPress={() => {
                             setContractDuration(macro.duration);
                             setContractStake(macro.stake);
@@ -1993,7 +2308,7 @@ export default function App() {
                           <Text style={{ fontSize: 18 }}>🎤</Text>
                        </Pressable>
                        <Pressable
-                         style={[styles.buttonPrimary, { flex: 1, marginTop: 0 }]}
+                         style={({ pressed }) => [styles.buttonPrimary, { flex: 1, marginTop: 0 }, pressed && styles.buttonPrimaryPressed]}
                          onPress={launchPactExecution}
                        >
                          <Text style={styles.buttonPrimaryText}>LOCK IN</Text>
@@ -2011,7 +2326,7 @@ export default function App() {
                     <Text style={styles.cardSubtitle}>Preparing contract verification gate...</Text>
 
                     <Pressable
-                      style={[styles.buttonSecondary, { width: "100%", marginTop: 32 }]}
+                      style={({ pressed }) => [styles.buttonSecondary, { width: "100%", marginTop: 32 }, pressed && styles.buttonSecondaryPressed]}
                       onPress={() => {
                         setPactFlowMode("planning");
                         setExecutionCountdown(5);
@@ -2028,7 +2343,7 @@ export default function App() {
                      <Text style={[styles.heroSubtitle, { marginVertical: 8 }]}>
                         Contract constraints violated. Stabilize immediately to restore system privileges.
                      </Text>
-                     <Pressable style={[styles.buttonPrimary, { backgroundColor: DANGER_COLOR, marginTop: 12 }]} onPress={stabilizeRedFlash}>
+                    <Pressable style={({ pressed }) => [styles.buttonPrimary, { backgroundColor: DANGER_COLOR, marginTop: 12 }, pressed && styles.buttonPrimaryPressed]} onPress={stabilizeRedFlash}>
                         <Text style={[styles.buttonPrimaryText, { color: PRIMARY_TEXT }]}>{recoveryButtonLabel}</Text>
                      </Pressable>
                   </View>
@@ -2091,7 +2406,7 @@ export default function App() {
                   <View style={styles.stackGapMarginTop}>
                      <TextInput style={styles.input} value={squadName} onChangeText={setSquadName} placeholder="Squad Name" placeholderTextColor={SECONDARY_TEXT} />
                      <TextInput style={styles.input} value={squadFocus} onChangeText={setSquadFocus} placeholder="Mission Focus" placeholderTextColor={SECONDARY_TEXT} />
-                     <Pressable style={styles.buttonSecondary} onPress={handleCreateSquad}>
+                    <Pressable style={({ pressed }) => [styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]} onPress={handleCreateSquad}>
                         <Text style={styles.buttonSecondaryText}>INITIALIZE SQUAD</Text>
                      </Pressable>
                   </View>
@@ -2099,7 +2414,7 @@ export default function App() {
                   <View style={[styles.separator, { marginVertical: 20 }]} />
 
                   <TextInput style={styles.input} value={squadJoinCode} onChangeText={setSquadJoinCode} placeholder="Join Code (e.g., AB12CD)" placeholderTextColor={SECONDARY_TEXT} />
-                  <Pressable style={styles.buttonSecondary} onPress={handleJoinSquad}>
+                  <Pressable style={({ pressed }) => [styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]} onPress={handleJoinSquad}>
                      <Text style={styles.buttonSecondaryText}>JOIN EXISTING CREW</Text>
                   </Pressable>
 
@@ -2116,6 +2431,27 @@ export default function App() {
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>DESIGN TEMPLATES & THEMES</Text>
                   <Text style={styles.cardSubtitle}>Upgrade your terminal identity and workspace shell.</Text>
+
+                  <View style={styles.premiumHeroCard}>
+                    <Text style={styles.premiumHeroEyebrow}>Premium</Text>
+                    <Text style={styles.premiumHeroTitle}>Frictionless Execution Stack</Text>
+                    <Text style={styles.premiumHeroSubtitle}>
+                      Unified coaching intelligence, faster mission capture, and premium recovery flow for operators who optimize consistency.
+                    </Text>
+                    <View style={styles.premiumPillarsRow}>
+                      <View style={styles.premiumPillarChip}><Text style={styles.premiumPillarText}>AI Coach</Text></View>
+                      <View style={styles.premiumPillarChip}><Text style={styles.premiumPillarText}>Future Self</Text></View>
+                      <View style={styles.premiumPillarChip}><Text style={styles.premiumPillarText}>Reports</Text></View>
+                    </View>
+                  </View>
+
+                  <MonetizationPanel
+                    visible
+                    accent={ACCENT_GREEN}
+                    plan={effectivePlan}
+                    isDeviceTrialActive={deviceTrialStatus.active}
+                    trialDaysRemaining={deviceTrialStatus.daysRemaining}
+                  />
                   
                   {templateMessage && (
                      <Text style={[styles.cardSubtitle, { color: ACCENT_GREEN, marginTop: 10 }]}>{templateMessage}</Text>
@@ -2145,11 +2481,11 @@ export default function App() {
                            
                            {!selected && (
                              owned ? (
-                               <Pressable style={[styles.buttonSecondary, { marginTop: 8 }]} onPress={() => setSelectedDesignTemplateId(template.id as DesignTemplateId)}>
+                               <Pressable style={({ pressed }) => [styles.buttonSecondary, { marginTop: 8 }, pressed && styles.buttonSecondaryPressed]} onPress={() => setSelectedDesignTemplateId(template.id as DesignTemplateId)}>
                                   <Text style={styles.buttonSecondaryText}>APPLY THEME</Text>
                                </Pressable>
                              ) : (
-                               <Pressable style={[styles.buttonSecondary, { marginTop: 8 }]} onPress={() => handleTemplatePurchase(template.id as DesignTemplateId)}>
+                               <Pressable style={({ pressed }) => [styles.buttonSecondary, { marginTop: 8 }, pressed && styles.buttonSecondaryPressed]} onPress={() => handleTemplatePurchase(template.id as DesignTemplateId)}>
                                   <Text style={styles.buttonSecondaryText}>UNLOCK THEME</Text>
                                </Pressable>
                              )
@@ -2159,8 +2495,11 @@ export default function App() {
                     })}
                   </View>
 
-                  <Pressable style={[styles.buttonPrimary, { marginTop: 24 }]} onPress={toggleMonetization}>
-                     <Text style={styles.buttonPrimaryText}>PREMIUM SUBSCRIPTION UPGRADE</Text>
+                  <Pressable style={({ pressed }) => [styles.buttonPrimary, styles.paywallPrimaryButton, { marginTop: 24 }, pressed && styles.buttonPrimaryPressed]} onPress={toggleMonetization}>
+                     <Text style={[styles.buttonPrimaryText, styles.paywallPrimaryButtonText]}>OPEN PREMIUM PAYWALL</Text>
+                  </Pressable>
+                  <Pressable style={({ pressed }) => [styles.buttonSecondary, styles.paywallSecondaryButton, { marginTop: 10 }, pressed && styles.buttonSecondaryPressed]} onPress={handleRestorePremium}>
+                    <Text style={[styles.buttonSecondaryText, styles.paywallSecondaryButtonText]}>RESTORE PURCHASES</Text>
                   </Pressable>
                 </View>
               </View>
@@ -2200,6 +2539,17 @@ export default function App() {
                      ))}
                   </View>
                 </View>
+
+                <ExecutiveDashboard
+                  coach={coachSnapshot}
+                  future={futureSelfSnapshot}
+                  transformationDayCount={state.streak}
+                  todaysMission={state.missionTitle}
+                  squadRank={activeSquadId ? "ACTIVE MEMBER" : "UNASSIGNED"}
+                  monthlyReport={monthlyReport}
+                  annualReport={annualReport}
+                  onShareReport={handleShareReport}
+                />
               </View>
 
               {/* TAB: SYSTEM */}
@@ -2233,20 +2583,20 @@ export default function App() {
                   <Text style={styles.cardTitle}>MAINTENANCE & SECURITY</Text>
                   
                   <View style={styles.stackGapMarginTop}>
-                    <Pressable style={styles.buttonSecondary} onPress={syncQueue}>
+                      <Pressable style={({ pressed }) => [styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]} onPress={syncQueue}>
                        <Text style={styles.buttonSecondaryText}>SYNC OFFLINE QUEUE ({queueCount})</Text>
                     </Pressable>
-                    <Pressable style={styles.buttonSecondary} onPress={toggleOffline}>
+                      <Pressable style={({ pressed }) => [styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]} onPress={toggleOffline}>
                        <Text style={styles.buttonSecondaryText}>{state.offline ? "DISENGAGE OFFLINE MODE" : "ENGAGE OFFLINE MODE"}</Text>
                     </Pressable>
-                    <Pressable style={[styles.buttonSecondary, { borderColor: DANGER_COLOR }]} onPress={lockTerminal}>
+                      <Pressable style={({ pressed }) => [styles.buttonSecondary, { borderColor: DANGER_COLOR }, pressed && styles.buttonSecondaryPressed]} onPress={lockTerminal}>
                        <Text style={[styles.buttonSecondaryText, { color: DANGER_COLOR }]}>SIGN OUT / LOCK TERMINAL</Text>
                     </Pressable>
                   </View>
                 </View>
               </View>
 
-            </View>
+            </Animated.View>
           </ScrollView>
 
           {/* WEB RIGHT COLUMN */}
@@ -2332,21 +2682,51 @@ const styles = StyleSheet.create({
   tabContentContainer: {
     marginBottom: 16,
   },
+  successToast: {
+    position: "absolute",
+    top: 56,
+    left: 24,
+    right: 24,
+    zIndex: 500,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0,255,136,0.4)",
+    backgroundColor: "rgba(8,28,20,0.95)",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: "center",
+  },
+  successToastText: {
+    color: "#A8FFD6",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+  },
 
   // CARDS & SYSTEM SHELLS
   card: {
     backgroundColor: SURFACE,
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: Platform.OS === "web" ? 26 : 22,
+    padding: Platform.OS === "web" ? 26 : 22,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
+    shadowColor: "#000000",
+    shadowOpacity: Platform.OS === "web" ? 0.18 : 0.1,
+    shadowRadius: Platform.OS === "web" ? 22 : 12,
+    shadowOffset: { width: 0, height: Platform.OS === "web" ? 10 : 6 },
+    elevation: Platform.OS === "android" ? 2 : 0,
   },
   heroCard: {
     backgroundColor: SURFACE,
-    borderRadius: 28,
-    padding: 28,
+    borderRadius: Platform.OS === "web" ? 30 : 24,
+    padding: Platform.OS === "web" ? 30 : 24,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
+    shadowColor: "#000000",
+    shadowOpacity: Platform.OS === "web" ? 0.22 : 0.12,
+    shadowRadius: Platform.OS === "web" ? 26 : 14,
+    shadowOffset: { width: 0, height: Platform.OS === "web" ? 12 : 7 },
+    elevation: Platform.OS === "android" ? 3 : 0,
   },
   heroTopRow: {
     flexDirection: "row",
@@ -2404,11 +2784,16 @@ const styles = StyleSheet.create({
   // BUTTONS
   buttonPrimary: {
     backgroundColor: ACCENT_GREEN,
-    height: 64,
+    height: Platform.OS === "web" ? 60 : 64,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
+    shadowColor: "#000000",
+    shadowOpacity: Platform.OS === "web" ? 0.14 : 0.12,
+    shadowRadius: Platform.OS === "web" ? 12 : 8,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: Platform.OS === "android" ? 3 : 0,
   },
   buttonPrimaryText: {
     color: "#000000",
@@ -2416,10 +2801,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.5,
   },
+  buttonPrimaryPressed: {
+    transform: [{ scale: 0.985 }],
+    opacity: 0.94,
+  },
   buttonSecondary: {
     backgroundColor: SECONDARY_SURFACE,
     borderRadius: 16,
-    height: 54,
+    height: Platform.OS === "web" ? 52 : 54,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -2429,6 +2818,10 @@ const styles = StyleSheet.create({
     color: PRIMARY_TEXT,
     fontSize: 14,
     fontWeight: "600",
+  },
+  buttonSecondaryPressed: {
+    transform: [{ scale: 0.985 }],
+    opacity: 0.92,
   },
   buttonVoice: {
     backgroundColor: SECONDARY_SURFACE,
@@ -2454,6 +2847,10 @@ const styles = StyleSheet.create({
     borderColor: BORDER_COLOR,
     alignItems: "center",
     marginRight: 12,
+  },
+  quickDeployCardPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
   },
   quickDeployNumber: {
     color: ACCENT_GREEN,
@@ -2626,6 +3023,71 @@ const styles = StyleSheet.create({
     borderColor: BORDER_COLOR,
     marginBottom: 12,
   },
+  premiumHeroCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "#121925",
+    padding: 14,
+    marginTop: 16,
+    marginBottom: 14,
+  },
+  premiumHeroEyebrow: {
+    color: "#94A7BE",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  premiumHeroTitle: {
+    color: "#F5F5F5",
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+    marginBottom: 6,
+  },
+  premiumHeroSubtitle: {
+    color: "#AFC0D2",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  premiumPillarsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
+  premiumPillarChip: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  premiumPillarText: {
+    color: "#DCE6F2",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  paywallPrimaryButton: {
+    backgroundColor: "#EAF1F8",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  paywallPrimaryButtonText: {
+    color: "#0E141D",
+    letterSpacing: 0.4,
+  },
+  paywallSecondaryButton: {
+    backgroundColor: "#141C26",
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  paywallSecondaryButtonText: {
+    color: "#DDE7F3",
+  },
   statusBadgeChip: {
     borderRadius: 12,
     paddingHorizontal: 10,
@@ -2767,8 +3229,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingHorizontal: 26,
+    paddingVertical: 16,
     backgroundColor: SURFACE,
     borderBottomWidth: 1,
     borderBottomColor: BORDER_COLOR,
@@ -2777,8 +3239,8 @@ const styles = StyleSheet.create({
   webGlobalCenter: { flexDirection: "row" },
   webGlobalTime: { color: SECONDARY_TEXT, fontSize: 13, fontWeight: "500" },
   webGlobalAuth: { color: SECONDARY_TEXT, fontSize: 13, fontWeight: "500" },
-  webLeftCol: { width: 320, borderRightWidth: 1, borderRightColor: BORDER_COLOR, backgroundColor: BG_COLOR },
+  webLeftCol: { width: 336, borderRightWidth: 1, borderRightColor: BORDER_COLOR, backgroundColor: BG_COLOR },
   webCenterCol: { flex: 1 },
-  webRightCol: { width: 320, borderLeftWidth: 1, borderLeftColor: BORDER_COLOR, backgroundColor: BG_COLOR },
-  webColContent: { padding: 20 },
+  webRightCol: { width: 336, borderLeftWidth: 1, borderLeftColor: BORDER_COLOR, backgroundColor: BG_COLOR },
+  webColContent: { padding: 22 },
 });
