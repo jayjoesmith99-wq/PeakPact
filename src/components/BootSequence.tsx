@@ -1,17 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Audio, ResizeMode, Video } from 'expo-av';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { getLocalizedText, type SupportedLanguage } from '../services/i18n';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 
-const primaryVideo = require('../../assets/aunch-introAUDIO.MP3.mp4');
-const fallbackVideo = require('../../assets/onboarding-loop.mp4.mp4');
-const fallbackAudio = require('../../assets/sounds/welcome-elite.wav');
+const primaryVideo = require('../../assets/A_hyper_realistic_cinematic_.mp4');
+const peakPactLogo = require('../../assets/logo.peakpact.png');
+const SKIP_DELAY_MS = 1_200;
 
 type BootSequenceProps = {
   onComplete: () => void;
@@ -19,181 +14,147 @@ type BootSequenceProps = {
 };
 
 export default function BootSequence({ onComplete, language }: BootSequenceProps) {
-  const [phase, setPhase] = useState<'intro' | 'lock' | 'launch'>('intro');
-  const [useFallbackVideo, setUseFallbackVideo] = useState(false);
+  const insets = useSafeAreaInsets();
   const [canSkip, setCanSkip] = useState(false);
-  const videoRef = useRef<Video>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [isMuted, setIsMuted] = useState(Platform.OS === 'web');
+  const hasCompletedRef = useRef(false);
+  const retryCountRef = useRef(0);
 
-  const overlayOpacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
-  const textTranslateY = useSharedValue(18);
-  const pulseOpacity = useSharedValue(0);
-
-  const videoSource = useMemo(
-    () => (useFallbackVideo ? fallbackVideo : primaryVideo),
-    [useFallbackVideo],
-  );
-
-  useEffect(() => {
-    let active = true;
-
-    overlayOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
-    textOpacity.value = withTiming(1, { duration: 680, easing: Easing.out(Easing.cubic) });
-    textTranslateY.value = withTiming(0, { duration: 680, easing: Easing.out(Easing.cubic) });
-
-    const startPlayback = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          staysActiveInBackground: false,
-          interruptionModeIOS: 1,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          interruptionModeAndroid: 1,
-          playThroughEarpieceAndroid: false,
-        });
-
-        const sound = new Audio.Sound();
-        soundRef.current = sound;
-        await sound.loadAsync(fallbackAudio, {
-          shouldPlay: true,
-          isLooping: false,
-          volume: 0.72,
-          progressUpdateIntervalMillis: 250,
-        });
-      } catch {
-        // Keep flow resilient if audio cannot load on a device/runtime.
-      }
-
-      try {
-        await videoRef.current?.playAsync();
-      } catch {
-        if (active) {
-          setUseFallbackVideo(true);
-        }
-      }
-    };
-
-    const beginTimer = setTimeout(() => {
-      void startPlayback();
-    }, 120);
-
-    const skipTimer = setTimeout(() => {
-      if (active) {
-        setCanSkip(true);
-      }
-    }, 1200);
-
-    const phaseTwo = setTimeout(() => {
-      if (!active) return;
-      setPhase('lock');
-      textOpacity.value = withTiming(0, { duration: 280, easing: Easing.out(Easing.cubic) }, () => {
-        textTranslateY.value = 16;
-        textOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
-        textTranslateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
-      });
-      pulseOpacity.value = withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) });
-    }, 3600);
-
-    const phaseThree = setTimeout(() => {
-      if (!active) return;
-      setPhase('launch');
-      textOpacity.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) }, () => {
-        textTranslateY.value = 16;
-        textOpacity.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
-        textTranslateY.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
-      });
-    }, 7600);
-
-    const doneTimer = setTimeout(() => {
-      if (!active) return;
-      overlayOpacity.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) });
-      onComplete();
-    }, 10400);
-
-    return () => {
-      active = false;
-      clearTimeout(beginTimer);
-      clearTimeout(skipTimer);
-      clearTimeout(phaseTwo);
-      clearTimeout(phaseThree);
-      clearTimeout(doneTimer);
-      void videoRef.current?.stopAsync();
-      void videoRef.current?.unloadAsync();
-      if (soundRef.current) {
-        void soundRef.current.stopAsync();
-        void soundRef.current.unloadAsync();
-      }
-    };
-  }, [onComplete, overlayOpacity, textOpacity, textTranslateY, pulseOpacity]);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value,
-  }));
-
-  const headlineStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-    transform: [{ translateY: textTranslateY.value }],
-  }));
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: pulseOpacity.value,
-  }));
-
-  const handleSkip = () => {
-    void videoRef.current?.stopAsync();
-    if (soundRef.current) {
-      void soundRef.current.stopAsync();
+  const completeSequence = () => {
+    if (hasCompletedRef.current) {
+      return;
     }
+
+    hasCompletedRef.current = true;
     onComplete();
   };
 
-  const phaseText =
-    phase === 'intro'
-      ? getLocalizedText('welcomeIntro', language)
-      : phase === 'lock'
-        ? getLocalizedText('welcomeDirective', language)
-        : getLocalizedText('welcomeContract', language);
+  const player = useVideoPlayer(primaryVideo, (videoPlayer) => {
+    videoPlayer.loop = false;
+    videoPlayer.muted = Platform.OS === 'web';
+  });
 
-  const phaseSubtext =
-    phase === 'intro'
-      ? getLocalizedText('introPactBody', language)
-      : phase === 'lock'
-        ? getLocalizedText('introSystemBody', language)
-        : getLocalizedText('onboardingFirstStepLabel', language);
+  useEffect(() => {
+    const skipTimer = setTimeout(() => {
+      setCanSkip(true);
+    }, SKIP_DELAY_MS);
+    const endSubscription = player.addListener('playToEnd', completeSequence);
+    const statusSubscription = player.addListener('statusChange', ({ status }) => {
+      if (status === 'readyToPlay') {
+        setVideoFailed(false);
+        player.play();
+      } else if (status === 'error') {
+        setVideoFailed(true);
+      }
+    });
+
+    return () => {
+      clearTimeout(skipTimer);
+      endSubscription.remove();
+      statusSubscription.remove();
+      player.pause();
+    };
+  }, [player]);
+
+  useEffect(() => {
+    if (!videoFailed || retryCountRef.current >= 1 || hasCompletedRef.current) {
+      return;
+    }
+
+    retryCountRef.current += 1;
+    const retryTimer = setTimeout(() => {
+      setVideoFailed(false);
+      player.replace(primaryVideo);
+      player.play();
+    }, 500);
+
+    return () => clearTimeout(retryTimer);
+  }, [player, videoFailed]);
+
+  const handleSkip = () => {
+    if (!canSkip || hasCompletedRef.current) {
+      return;
+    }
+
+    player.pause();
+    completeSequence();
+  };
+
+  const handleToggleMute = () => {
+    const next = !isMuted;
+    player.muted = next;
+    setIsMuted(next);
+  };
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
-      <Video
-        ref={videoRef}
-        source={videoSource}
-        style={styles.video}
-        resizeMode={ResizeMode.COVER}
-        isLooping={false}
-        shouldPlay
-        isMuted={false}
-        useNativeControls={false}
-        onError={() => {
-          setUseFallbackVideo(true);
-        }}
-      />
+    <View style={styles.container}>
+      <View style={styles.videoStage}>
+        <VideoView
+          player={player}
+          style={styles.video}
+          contentFit="contain"
+          nativeControls={false}
+        />
+      </View>
+      <View pointerEvents="none" style={styles.readabilityScrim} />
 
-      <View style={styles.scrim} />
-      <Animated.View style={[styles.pulseHalo, pulseStyle]} />
-
-      <Animated.View style={[styles.textContainer, headlineStyle]}>
-        <Text style={styles.eyebrow}>PEAKPACT</Text>
-        <Text style={styles.text}>{phaseText}</Text>
-        <Text style={styles.subText}>{phaseSubtext}</Text>
-      </Animated.View>
-
-      {canSkip ? (
-        <Pressable style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>SKIP INTRO</Text>
+      {videoFailed ? (
+        <Pressable accessibilityRole="button" onPress={completeSequence} style={styles.fallbackButton}>
+          <Text style={styles.skipText}>{getLocalizedText('tutorialSkipLabel', language)}</Text>
         </Pressable>
       ) : null}
-    </Animated.View>
+
+      <View
+        pointerEvents="none"
+        style={[
+          styles.brandLockup,
+          {
+            top: Math.max(insets.top, 12) + 10,
+            left: Math.max(insets.left, 16) + 10,
+          },
+        ]}
+      >
+        <Image source={peakPactLogo} style={styles.brandLogo} resizeMode="contain" />
+        <Text style={styles.brandText}>PEAKPACT</Text>
+      </View>
+
+      {canSkip ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={getLocalizedText('tutorialSkipLabel', language)}
+          onPress={handleSkip}
+          style={({ pressed }) => [
+            styles.skipButton,
+            {
+              top: Math.max(insets.top, 12) + 8,
+              right: Math.max(insets.right, 12) + 8,
+            },
+            pressed && styles.skipButtonPressed,
+          ]}
+        >
+          <Text style={styles.skipText}>{getLocalizedText('tutorialSkipLabel', language)}</Text>
+        </Pressable>
+      ) : null}
+
+      {Platform.OS === 'web' && !videoFailed ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={isMuted ? 'Unmute video' : 'Mute video'}
+          onPress={handleToggleMute}
+          style={({ pressed }) => [
+            styles.muteButton,
+            {
+              bottom: Math.max(insets.bottom, 12) + 8,
+              right: Math.max(insets.right, 12) + 8,
+            },
+            pressed && styles.skipButtonPressed,
+          ]}
+        >
+          <Text style={styles.skipText}>{isMuted ? '🔇' : '🔊'}</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -201,71 +162,94 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  videoStage: {
+    flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    overflow: 'hidden',
   },
   video: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 8, 8, 0.52)',
-  },
-  pulseHalo: {
-    position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 999,
-    backgroundColor: 'rgba(118,255,3,0.16)',
-    shadowColor: '#76FF03',
-    shadowOpacity: 0.42,
-    shadowRadius: 34,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  textContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
     width: '100%',
-    maxWidth: 560,
+    height: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
   },
-  eyebrow: {
-    color: '#9CE22A',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 3.6,
-    marginBottom: 12,
-  },
-  text: {
-    color: '#F5F5F5',
-    fontSize: 33,
-    fontWeight: '900',
-    letterSpacing: 2.4,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-  },
-  subText: {
-    color: '#D8DFDA',
-    marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
-    letterSpacing: 0.9,
-    textAlign: 'center',
+  readabilityScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.16)',
+    zIndex: 1,
   },
   skipButton: {
     position: 'absolute',
-    bottom: 44,
-    paddingVertical: 11,
-    paddingHorizontal: 18,
-    backgroundColor: 'rgba(8, 8, 8, 0.72)',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    zIndex: 3,
+    minHeight: 44,
+    minWidth: 76,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.68)',
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  muteButton: {
+    position: 'absolute',
+    zIndex: 3,
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.68)',
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  brandLockup: {
+    position: 'absolute',
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.58)',
+    borderColor: 'rgba(156,226,42,0.28)',
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  brandLogo: {
+    width: 32,
+    height: 32,
+    marginRight: 8,
+  },
+  brandText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 2.4,
+  },
+  skipButtonPressed: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
   },
   skipText: {
-    color: '#D0D0D0',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.8,
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0,
+  },
+  fallbackButton: {
+    position: 'absolute',
+    zIndex: 3,
+    alignSelf: 'center',
+    bottom: 32,
+    minHeight: 44,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.72)',
+    borderRadius: 8,
+    paddingHorizontal: 18,
   },
 });

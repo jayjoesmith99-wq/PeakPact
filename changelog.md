@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 Release Candidate
+- Prepared the Android store build profile to emit an AAB and automatically advance the remote Android version code.
+- Added the Android camera permission required by photo proof capture.
+- Confirmed the production EAS environment contains Supabase, RevenueCat, and Firebase runtime configuration.
+- Hardened session restore, app resume handling, expired pact protection, and local verification fallback.
+- Added evidence-based Android release audit and Google Play publication checklist.
+
 ## Unreleased
 - Introduced language-first startup gate before any onboarding or auth flow.
 - Added premium language selection screen for Android and Web.

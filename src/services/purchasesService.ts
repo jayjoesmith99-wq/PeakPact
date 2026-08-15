@@ -19,10 +19,13 @@ export type EntitlementStatus = {
   message: string;
 };
 
+export const REVENUECAT_ENTITLEMENT_ID = 'pro_access';
+
 const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
 
 let purchasesModule: any = null;
 let logLevelModule: { DEBUG?: string } | null = null;
+let purchasesConfigured = false;
 
 try {
   purchasesModule = require('react-native-purchases');
@@ -44,41 +47,50 @@ function getPurchasesClient() {
   } | null;
 }
 
-function extractActiveProductIds(value: unknown): string[] {
+export function extractActiveProductIds(value: unknown): string[] {
   if (!value || typeof value !== 'object') {
     return [];
   }
 
-  const candidate = value as { entitlements?: { active?: Record<string, unknown> } };
-  const active = candidate.entitlements?.active;
-  if (!active || typeof active !== 'object') {
-    return [];
+  const candidate = value as {
+    entitlements?: { active?: Record<string, unknown> };
+    activeSubscriptions?: string[];
+    activeSubscriptionsList?: string[];
+    activeEntitlements?: Record<string, unknown>;
+  };
+
+  const active = candidate.entitlements?.active ?? candidate.activeEntitlements;
+  if (active && typeof active === 'object') {
+    return Object.keys(active);
   }
 
-  return Object.keys(active);
+  const directList = candidate.activeSubscriptions ?? candidate.activeSubscriptionsList ?? [];
+  return Array.isArray(directList)
+    ? directList.filter((entry): entry is string => typeof entry === 'string')
+    : [];
 }
 
 export function getPurchasePlanSummary(): PurchasePlanSummary {
   return {
     monthly: {
-      id: 'premium_monthly',
+      id: 'monthly_premium',
       title: 'PeakPact Premium Monthly',
       description: 'Unlock elite guidance, unlimited squads, and premium execution intelligence.',
-      price: '$9.99/mo',
+      price: '€9.99/month',
       enabled: true,
     },
     yearly: {
-      id: 'premium_yearly',
+      id: 'yearly_premium',
       title: 'PeakPact Premium Yearly',
       description: 'One year of elite features with discounted annual pricing.',
-      price: '$79/year',
+      price: '€79.99/year',
       enabled: true,
     },
     lifetime: {
       id: 'lifetime_premium',
       title: 'PeakPact Premium Lifetime',
       description: 'One-time permanent unlock of all premium functionality.',
-      price: '$199',
+      price: '€199',
       enabled: true,
     },
   };
@@ -105,8 +117,13 @@ export async function initializePurchases(): Promise<EntitlementStatus> {
   }
 
   try {
+    if (purchasesConfigured) {
+      return getEntitlementStatus();
+    }
+
     purchases.setLogLevel(logLevelModule?.DEBUG ?? 'DEBUG');
     await purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    purchasesConfigured = true;
     return {
       isEntitled: false,
       activeProductIds: [],
@@ -124,6 +141,100 @@ export async function initializePurchases(): Promise<EntitlementStatus> {
   }
 }
 
+export type RevenueCatProductId =
+  | 'monthly_premium'
+  | 'yearly_premium'
+  | 'lifetime_premium'
+  | 'pp_pack'
+  | 'pp_topup_custom';
+
+export async function getCurrentOfferings(): Promise<unknown> {
+  const purchases = getPurchasesClient() as ({ getOfferings?: () => Promise<unknown> } | null);
+  if (!purchases?.getOfferings) {
+    throw new Error('RevenueCat offerings are unavailable in this build.');
+  }
+  return purchases.getOfferings();
+}
+
+export async function purchaseProductById(productId: RevenueCatProductId): Promise<EntitlementStatus> {
+  const purchases = getPurchasesClient() as ({
+    getOfferings?: () => Promise<unknown>;
+    getProducts?: (productIds: string[], type?: string) => Promise<unknown[]>;
+    purchasePackage?: (pkg: unknown) => Promise<unknown>;
+    purchaseStoreProduct?: (product: unknown) => Promise<unknown>;
+  } | null);
+
+  if (!purchases?.getOfferings || !purchases.purchasePackage || !purchases.purchaseStoreProduct) {
+    return {
+      isEntitled: false,
+      activeProductIds: [],
+      source: 'disabled',
+      message: 'Purchases are unavailable in this build.',
+    };
+  }
+
+  try {
+    const offeringsResult = await purchases.getOfferings();
+    const offerings = offeringsResult as {
+      current?: { availablePackages?: Array<{ identifier?: string; product?: { identifier?: string } }> } | null;
+      all?: Record<string, { availablePackages?: Array<{ identifier?: string; product?: { identifier?: string } }> }>;
+    };
+    const availablePackages = [
+      ...(offerings.current?.availablePackages ?? []),
+      ...Object.values(offerings.all ?? {}).flatMap((offering) => offering.availablePackages ?? []),
+    ];
+    const packageToPurchase = availablePackages.find(
+      (pkg) => pkg.product?.identifier === productId || pkg.identifier === productId,
+    );
+
+    let purchaseResult: unknown;
+    if (packageToPurchase) {
+      purchaseResult = await purchases.purchasePackage(packageToPurchase);
+    } else if (purchases.getProducts) {
+      const products = await purchases.getProducts([productId], 'INAPP');
+      const productToPurchase = products[0];
+      if (!productToPurchase) {
+        return {
+          isEntitled: false,
+          activeProductIds: [],
+          source: 'disabled',
+          message: `RevenueCat product is not available: ${productId}`,
+        };
+      }
+      purchaseResult = await purchases.purchaseStoreProduct(productToPurchase);
+    } else {
+      return {
+        isEntitled: false,
+        activeProductIds: [],
+        source: 'disabled',
+        message: `RevenueCat product is not available: ${productId}`,
+      };
+    }
+
+    const activeProductIds = extractActiveProductIds(purchaseResult);
+    return {
+      isEntitled: activeProductIds.includes(REVENUECAT_ENTITLEMENT_ID),
+      activeProductIds,
+      source: 'native',
+      message: 'Purchase completed.',
+    };
+  } catch (error) {
+    console.error(`RevenueCat Purchase Error (${productId}):`, error);
+    return {
+      isEntitled: false,
+      activeProductIds: [],
+      source: 'disabled',
+      message: 'Purchase failed.',
+    };
+  }
+}
+
+export const purchaseMonthlyPremium = () => purchaseProductById('monthly_premium');
+export const purchaseYearlyPremium = () => purchaseProductById('yearly_premium');
+export const purchaseLifetimePremium = () => purchaseProductById('lifetime_premium');
+export const purchasePPPack = () => purchaseProductById('pp_pack');
+export const purchaseCustomPPTopUp = () => purchaseProductById('pp_topup_custom');
+
 export async function restorePurchases(): Promise<EntitlementStatus> {
   const purchases = getPurchasesClient();
   if (!purchases?.restorePurchases) {
@@ -139,7 +250,7 @@ export async function restorePurchases(): Promise<EntitlementStatus> {
     const customerInfo = await purchases.restorePurchases();
     const activeProductIds = extractActiveProductIds(customerInfo);
     return {
-      isEntitled: activeProductIds.length > 0,
+      isEntitled: activeProductIds.includes(REVENUECAT_ENTITLEMENT_ID),
       activeProductIds,
       source: 'native',
       message: 'Restore completed.',
@@ -170,7 +281,7 @@ export async function purchasePackage(pkg: unknown): Promise<EntitlementStatus> 
     const purchaseResult = await purchases.purchasePackage(pkg);
     const activeProductIds = extractActiveProductIds(purchaseResult);
     return {
-      isEntitled: activeProductIds.length > 0,
+      isEntitled: activeProductIds.includes(REVENUECAT_ENTITLEMENT_ID),
       activeProductIds,
       source: 'native',
       message: 'Purchase completed.',
@@ -201,7 +312,7 @@ export async function getEntitlementStatus(): Promise<EntitlementStatus> {
     const customerInfo = await purchases.getCustomerInfo();
     const activeProductIds = extractActiveProductIds(customerInfo);
     return {
-      isEntitled: activeProductIds.length > 0,
+      isEntitled: activeProductIds.includes(REVENUECAT_ENTITLEMENT_ID),
       activeProductIds,
       source: 'native',
       message: 'Entitlements refreshed.',

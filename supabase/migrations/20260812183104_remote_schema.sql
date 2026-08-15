@@ -1,0 +1,708 @@
+
+
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+
+COMMENT ON SCHEMA "public" IS 'standard public schema';
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE OR REPLACE FUNCTION "public"."execute_daily_sweep"() RETURNS "void"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+begin
+  with swept_profiles as (
+    update public.user_profiles
+    set
+      red_state = true,
+      streak = 0,
+      pp = greatest(0, pp - 50),
+      updated_at = now()
+    where last_pact_date < to_char(current_date - interval '1 day', 'YYYY-MM-DD')
+      and red_state = false
+    returning user_id
+  )
+  insert into public.pact_history (user_id, content, result, pp_awarded, created_at, synced)
+  select
+    user_id,
+    'SYSTEM_AUTO_SWEEP: MISSED DAILY PACT',
+    'RED_STATE_PENALTY',
+    -50,
+    now(),
+    true
+  from swept_profiles;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."execute_daily_sweep"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."rls_auto_enable"() RETURNS "event_trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog'
+    AS $$
+DECLARE
+  cmd record;
+BEGIN
+  FOR cmd IN
+    SELECT *
+    FROM pg_event_trigger_ddl_commands()
+    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+      AND object_type IN ('table','partitioned table')
+  LOOP
+     IF cmd.schema_name IS NOT NULL AND cmd.schema_name IN ('public') AND cmd.schema_name NOT IN ('pg_catalog','information_schema') AND cmd.schema_name NOT LIKE 'pg_toast%' AND cmd.schema_name NOT LIKE 'pg_temp%' THEN
+      BEGIN
+        EXECUTE format('alter table if exists %s enable row level security', cmd.object_identity);
+        RAISE LOG 'rls_auto_enable: enabled RLS on %', cmd.object_identity;
+      EXCEPTION
+        WHEN OTHERS THEN
+          RAISE LOG 'rls_auto_enable: failed to enable RLS on %', cmd.object_identity;
+      END;
+     ELSE
+        RAISE LOG 'rls_auto_enable: skip % (either system schema or not in enforced list: %.)', cmd.object_identity, cmd.schema_name;
+     END IF;
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."rls_auto_enable"() OWNER TO "postgres";
+
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."contracts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "stake_amount" numeric NOT NULL,
+    "deadline" timestamp with time zone NOT NULL,
+    "status" "text" DEFAULT 'active'::"text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "contracts_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'completed'::"text", 'failed'::"text"])))
+);
+
+
+ALTER TABLE "public"."contracts" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."execution_lanes" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "status" "text" DEFAULT 'active'::"text",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    CONSTRAINT "execution_lanes_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'completed'::"text", 'failed'::"text"])))
+);
+
+
+ALTER TABLE "public"."execution_lanes" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."pact_history" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "text" NOT NULL,
+    "content" "text" NOT NULL,
+    "result" "text" NOT NULL,
+    "pp_awarded" integer DEFAULT 0 NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "synced" boolean DEFAULT true NOT NULL,
+    "signature" "text",
+    "device_timestamp" timestamp with time zone
+);
+
+
+ALTER TABLE "public"."pact_history" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."pacts" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "deadline" timestamp with time zone,
+    "status" "text" DEFAULT 'active'::"text",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    "is_complete" boolean DEFAULT false,
+    "due_date" "text"
+);
+
+
+ALTER TABLE "public"."pacts" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."pacts" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."pacts_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+    "id" "uuid" NOT NULL,
+    "email" "text",
+    "is_pro" boolean DEFAULT false,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+
+ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."test_table" (
+    "id" integer,
+    "user_id" "uuid"
+);
+
+
+ALTER TABLE "public"."test_table" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "text" NOT NULL,
+    "level" integer DEFAULT 1 NOT NULL,
+    "pp" integer DEFAULT 0 NOT NULL,
+    "streak" integer DEFAULT 0 NOT NULL,
+    "red_state" boolean DEFAULT false NOT NULL,
+    "last_pact_date" "text" DEFAULT CURRENT_DATE NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
+
+
+ALTER TABLE ONLY "public"."contracts"
+    ADD CONSTRAINT "contracts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."execution_lanes"
+    ADD CONSTRAINT "execution_lanes_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."pact_history"
+    ADD CONSTRAINT "pact_history_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."pacts"
+    ADD CONSTRAINT "pacts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_profiles"
+    ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_profiles"
+    ADD CONSTRAINT "user_profiles_user_id_key" UNIQUE ("user_id");
+
+
+
+CREATE INDEX "contracts_user_id_fkey_idx" ON "public"."contracts" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "execution_lanes_user_id_fkey_idx" ON "public"."execution_lanes" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "pact_history_created_at_idx" ON "public"."pact_history" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "pact_history_device_timestamp_idx" ON "public"."pact_history" USING "btree" ("device_timestamp" DESC) WHERE ("device_timestamp" IS NOT NULL);
+
+
+
+CREATE INDEX "pact_history_user_id_idx" ON "public"."pact_history" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "pacts_user_id_fkey_idx" ON "public"."pacts" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "test_table_user_id_idx" ON "public"."test_table" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "user_profiles_user_id_idx" ON "public"."user_profiles" USING "btree" ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."contracts"
+    ADD CONSTRAINT "contracts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."execution_lanes"
+    ADD CONSTRAINT "execution_lanes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."pacts"
+    ADD CONSTRAINT "pacts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."test_table"
+    ADD CONSTRAINT "test_table_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+
+
+CREATE POLICY "Allow anon insert access to pact_history" ON "public"."pact_history" FOR INSERT TO "anon" WITH CHECK (true);
+
+
+
+CREATE POLICY "Allow anon read access to pact_history" ON "public"."pact_history" FOR SELECT TO "anon" USING (true);
+
+
+
+CREATE POLICY "Allow anon update access to pact_history" ON "public"."pact_history" FOR UPDATE TO "anon" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Users can create contracts" ON "public"."contracts" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert own execution lanes" ON "public"."execution_lanes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can manage their own pacts" ON "public"."pacts" USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update own contracts" ON "public"."contracts" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update own execution lanes" ON "public"."execution_lanes" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own contracts" ON "public"."contracts" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own execution lanes" ON "public"."execution_lanes" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
+
+
+
+ALTER TABLE "public"."contracts" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."execution_lanes" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."pact_history" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."pacts" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."test_table" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "test_table_delete_user_scoped" ON "public"."test_table" FOR DELETE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "test_table_insert_user_scoped" ON "public"."test_table" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "test_table_select_user_scoped" ON "public"."test_table" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "test_table_update_user_scoped" ON "public"."test_table" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_profiles_insert_policy" ON "public"."user_profiles" FOR INSERT TO "authenticated" WITH CHECK (((( SELECT "auth"."uid"() AS "uid"))::"text" = "user_id"));
+
+
+
+CREATE POLICY "user_profiles_select_policy" ON "public"."user_profiles" FOR SELECT TO "authenticated" USING (((( SELECT "auth"."uid"() AS "uid"))::"text" = "user_id"));
+
+
+
+CREATE POLICY "user_profiles_update_policy" ON "public"."user_profiles" FOR UPDATE TO "authenticated" USING (((( SELECT "auth"."uid"() AS "uid"))::"text" = "user_id")) WITH CHECK (((( SELECT "auth"."uid"() AS "uid"))::"text" = "user_id"));
+
+
+
+
+
+ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
+
+
+GRANT USAGE ON SCHEMA "public" TO "postgres";
+GRANT USAGE ON SCHEMA "public" TO "anon";
+GRANT USAGE ON SCHEMA "public" TO "authenticated";
+GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON FUNCTION "public"."execute_daily_sweep"() TO "anon";
+GRANT ALL ON FUNCTION "public"."execute_daily_sweep"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."execute_daily_sweep"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "anon";
+GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON TABLE "public"."contracts" TO "anon";
+GRANT ALL ON TABLE "public"."contracts" TO "authenticated";
+GRANT ALL ON TABLE "public"."contracts" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."execution_lanes" TO "anon";
+GRANT ALL ON TABLE "public"."execution_lanes" TO "authenticated";
+GRANT ALL ON TABLE "public"."execution_lanes" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."pact_history" TO "anon";
+GRANT ALL ON TABLE "public"."pact_history" TO "authenticated";
+GRANT ALL ON TABLE "public"."pact_history" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."pacts" TO "anon";
+GRANT ALL ON TABLE "public"."pacts" TO "authenticated";
+GRANT ALL ON TABLE "public"."pacts" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."pacts_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."pacts_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."pacts_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."profiles" TO "anon";
+GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."test_table" TO "anon";
+GRANT ALL ON TABLE "public"."test_table" TO "authenticated";
+GRANT ALL ON TABLE "public"."test_table" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
+GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_profiles" TO "service_role";
+
+
+
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+drop extension if exists "pg_net";
+
+

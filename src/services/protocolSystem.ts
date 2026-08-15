@@ -151,7 +151,7 @@ export const applyRecoveryAction = ({
     };
   }
 
-  const nextUsesToday = usageState.remaining === DAILY_STABILIZATION_LIMIT ? 1 : stabilizationUsesToday + 1;
+  const nextUsesToday = Math.max(0, stabilizationUsesToday + 1);
 
   return {
     applied: true,

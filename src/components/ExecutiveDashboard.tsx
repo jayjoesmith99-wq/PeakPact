@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import i18n from 'i18next';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ExecutionCoachSnapshot } from '../services/aiExecutionCoach';
 import type { FutureSelfSnapshot } from '../services/futureSelfEngine';
 import type { TransformationReport } from '../services/transformationReports';
+import { getLocalizedText, resolveLanguage, type SupportedLanguage } from '../services/i18n';
 
 type ExecutiveDashboardProps = {
   coach: ExecutionCoachSnapshot;
@@ -48,34 +50,50 @@ export default function ExecutiveDashboard({
   annualReport,
   onShareReport,
 }: ExecutiveDashboardProps) {
+  const [language, setLanguage] = useState<SupportedLanguage>(() => resolveLanguage(i18n.language));
   const projection30 = future.projections.find((projection) => projection.windowDays === 30);
   const projection90 = future.projections.find((projection) => projection.windowDays === 90);
   const projection365 = future.projections.find((projection) => projection.windowDays === 365);
   const isWeb = Platform.OS === 'web';
 
-  const metrics = [
-    { label: 'Discipline', value: coach.disciplineScore },
-    { label: 'Consistency', value: coach.consistencyScore },
-    { label: 'Focus', value: coach.focusScore },
-    { label: 'Recovery', value: coach.recoveryScore },
-  ];
+  useEffect(() => {
+    const handleLanguageChange = (nextLanguage: string) => {
+      setLanguage(resolveLanguage(nextLanguage));
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
+
+  const metrics = useMemo(
+    () => [
+      { label: getLocalizedText('dashboardDiscipline', language), value: coach.disciplineScore },
+      { label: getLocalizedText('dashboardConsistency', language), value: coach.consistencyScore },
+      { label: getLocalizedText('dashboardFocus', language), value: coach.focusScore },
+      { label: getLocalizedText('dashboardRecovery', language), value: coach.recoveryScore },
+    ],
+    [coach.consistencyScore, coach.disciplineScore, coach.focusScore, coach.recoveryScore, language],
+  );
 
   return (
     <View style={[styles.shell, isWeb && styles.shellWeb]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.eyebrow}>Premium Intelligence</Text>
-          <Text style={styles.header}>Executive Command Center</Text>
+          <Text style={styles.eyebrow}>{getLocalizedText('dashboardPremiumIntelligence', language)}</Text>
+          <Text style={styles.header}>{getLocalizedText('dashboardHeader', language)}</Text>
         </View>
         <View style={styles.dayChip}>
-          <Text style={styles.dayChipText}>Day {transformationDayCount}</Text>
+          <Text style={styles.dayChipText}>{`${getLocalizedText('dashboardDay', language)} ${transformationDayCount}`}</Text>
         </View>
       </View>
 
       <Text style={styles.subheader}>{coach.dailyBriefing}</Text>
 
       <View style={styles.scoreChartCard}>
-        <Text style={styles.scoreChartTitle}>Performance Vector</Text>
+        <Text style={styles.scoreChartTitle}>{getLocalizedText('dashboardPerformanceVector', language)}</Text>
         {metrics.map((metric) => (
           <View key={metric.label} style={styles.chartRow}>
             <Text style={styles.chartLabel}>{metric.label}</Text>
@@ -95,49 +113,49 @@ export default function ExecutiveDashboard({
 
       <View style={styles.cardGrid}>
         <View style={styles.identityCard}>
-          <Text style={styles.identityTitle}>Transformation Card</Text>
+          <Text style={styles.identityTitle}>{getLocalizedText('dashboardTransformationCard', language)}</Text>
           <Text style={styles.identityValue}>{coach.currentIdentity}</Text>
           <Text style={styles.identityMeta}>{future.identityNarrative}</Text>
         </View>
 
         <View style={styles.blockCard}>
-          <Text style={styles.blockTitle}>Mission Card</Text>
+          <Text style={styles.blockTitle}>{getLocalizedText('dashboardMissionCard', language)}</Text>
           <Text style={styles.blockBody}>{todaysMission}</Text>
         </View>
 
         <View style={styles.blockCard}>
-          <Text style={styles.blockTitle}>Squad Card</Text>
+          <Text style={styles.blockTitle}>{getLocalizedText('dashboardSquadCard', language)}</Text>
           <Text style={styles.blockBody}>{squadRank}</Text>
         </View>
 
         <View style={styles.blockCard}>
-          <Text style={styles.blockTitle}>Focus Window Card</Text>
+          <Text style={styles.blockTitle}>{getLocalizedText('dashboardFocusWindowCard', language)}</Text>
           <Text style={styles.blockBody}>{projection30?.executionFocus ?? coach.recommendations[0]}</Text>
         </View>
       </View>
 
       <View style={styles.splitRow}>
         <View style={styles.projectionPillar}>
-          <Text style={styles.pillarLabel}>30 Days</Text>
+          <Text style={styles.pillarLabel}>{`30 ${getLocalizedText('daysLabel', language)}`}</Text>
           <Text style={styles.pillarValue}>L{projection30?.projectedLevel ?? '-'}</Text>
-          <Text style={styles.pillarMeta}>Streak {projection30?.projectedStreak ?? '-'}</Text>
+          <Text style={styles.pillarMeta}>{`${getLocalizedText('dashboardStreak', language)} ${projection30?.projectedStreak ?? '-'}`}</Text>
         </View>
         <View style={styles.projectionPillar}>
-          <Text style={styles.pillarLabel}>90 Days</Text>
+          <Text style={styles.pillarLabel}>{`90 ${getLocalizedText('daysLabel', language)}`}</Text>
           <Text style={styles.pillarValue}>L{projection90?.projectedLevel ?? '-'}</Text>
-          <Text style={styles.pillarMeta}>Streak {projection90?.projectedStreak ?? '-'}</Text>
+          <Text style={styles.pillarMeta}>{`${getLocalizedText('dashboardStreak', language)} ${projection90?.projectedStreak ?? '-'}`}</Text>
         </View>
         <View style={styles.projectionPillar}>
-          <Text style={styles.pillarLabel}>365 Days</Text>
+          <Text style={styles.pillarLabel}>{`365 ${getLocalizedText('daysLabel', language)}`}</Text>
           <Text style={styles.pillarValue}>L{projection365?.projectedLevel ?? '-'}</Text>
-          <Text style={styles.pillarMeta}>Streak {projection365?.projectedStreak ?? '-'}</Text>
+          <Text style={styles.pillarMeta}>{`${getLocalizedText('dashboardStreak', language)} ${projection365?.projectedStreak ?? '-'}`}</Text>
         </View>
       </View>
 
       <View style={styles.projectionCard}>
-        <Text style={styles.projectionTitle}>Future Self Engine</Text>
+        <Text style={styles.projectionTitle}>{getLocalizedText('dashboardFutureSelfEngine', language)}</Text>
         <View style={styles.trajectoryBanner}>
-          <Text style={styles.trajectoryText}>Signal: {future.trajectorySignal.toUpperCase()}</Text>
+          <Text style={styles.trajectoryText}>{`${getLocalizedText('dashboardSignal', language)}: ${future.trajectorySignal.toUpperCase()}`}</Text>
         </View>
 
         {future.projections.map((projection) => (
@@ -146,10 +164,10 @@ export default function ExecutiveDashboard({
               <Text style={styles.projectionWindow}>{projection.windowDays}d</Text>
               <ConfidenceBadge band={projection.confidenceBand} />
             </View>
-            <Text style={styles.projectionRow}>Level {projection.projectedLevel}</Text>
-            <Text style={styles.projectionRow}>Streak {projection.projectedStreak}</Text>
-            <Text style={styles.projectionRow}>Discipline {projection.projectedDisciplineScore}</Text>
-            <Text style={styles.projectionRow}>Momentum {projection.momentumIndex}</Text>
+            <Text style={styles.projectionRow}>{`${getLocalizedText('dashboardLevel', language)} ${projection.projectedLevel}`}</Text>
+            <Text style={styles.projectionRow}>{`${getLocalizedText('dashboardStreak', language)} ${projection.projectedStreak}`}</Text>
+            <Text style={styles.projectionRow}>{`${getLocalizedText('dashboardDiscipline', language)} ${projection.projectedDisciplineScore}`}</Text>
+            <Text style={styles.projectionRow}>{`${getLocalizedText('dashboardMomentum', language)} ${projection.momentumIndex}`}</Text>
             <Text style={styles.projectionShift}>{projection.identityShift}</Text>
             <Text style={styles.projectionFocus}>{projection.executionFocus}</Text>
           </View>
@@ -157,7 +175,7 @@ export default function ExecutiveDashboard({
       </View>
 
       <View style={styles.timelineCard}>
-        <Text style={styles.timelineTitle}>Transformation Timeline</Text>
+        <Text style={styles.timelineTitle}>{getLocalizedText('dashboardTransformationTimeline', language)}</Text>
         {future.transformationTimeline.map((entry) => (
           <View key={`timeline-${entry.day}`} style={styles.timelineRow}>
             <View style={styles.timelineDot} />
@@ -173,16 +191,16 @@ export default function ExecutiveDashboard({
       </View>
 
       <View style={styles.recoCard}>
-        <Text style={styles.recoTitle}>AI Recommendation Card</Text>
+        <Text style={styles.recoTitle}>{getLocalizedText('dashboardRecommendationCard', language)}</Text>
         <Text style={styles.recoBody}>{coach.recommendations[0]}</Text>
       </View>
 
       <View style={styles.reportPreviewCard}>
-        <Text style={styles.reportPreviewTitle}>Transformation Reports</Text>
+        <Text style={styles.reportPreviewTitle}>{getLocalizedText('dashboardReports', language)}</Text>
         <Text style={styles.reportPreviewHeadline}>{monthlyReport.headline}</Text>
         <Text style={styles.reportPreviewSummary}>{monthlyReport.summary}</Text>
         <View style={styles.reportSignalChip}>
-          <Text style={styles.reportSignalText}>Signal: {monthlyReport.signal.toUpperCase()}</Text>
+          <Text style={styles.reportSignalText}>{`${getLocalizedText('dashboardSignal', language)}: ${monthlyReport.signal.toUpperCase()}`}</Text>
         </View>
         <View style={styles.kpiRow}>
           {monthlyReport.kpis.slice(0, 4).map((kpi) => (
@@ -196,10 +214,10 @@ export default function ExecutiveDashboard({
 
       <View style={styles.reportRow}>
         <Pressable style={({ pressed }) => [styles.reportButton, pressed && styles.reportButtonPressed]} onPress={() => onShareReport(monthlyReport)}>
-          <Text style={styles.reportButtonText}>Share Monthly Report</Text>
+          <Text style={styles.reportButtonText}>{getLocalizedText('dashboardShareMonthly', language)}</Text>
         </Pressable>
         <Pressable style={({ pressed }) => [styles.reportButton, pressed && styles.reportButtonPressed]} onPress={() => onShareReport(annualReport)}>
-          <Text style={styles.reportButtonText}>Share Annual Report</Text>
+          <Text style={styles.reportButtonText}>{getLocalizedText('dashboardShareAnnual', language)}</Text>
         </Pressable>
       </View>
     </View>

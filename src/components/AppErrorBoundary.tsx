@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { recordCrash } from '../services/telemetryService';
+import i18n from 'i18next';
+import { getLocalizedText, resolveLanguage } from '../i18n';
 
 type AppErrorBoundaryProps = {
   children: React.ReactNode;
@@ -30,15 +32,17 @@ export default class AppErrorBoundary extends React.Component<AppErrorBoundaryPr
       return this.props.children;
     }
 
+    const language = resolveLanguage(i18n.language);
+
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.card}>
-          <Text style={styles.title}>PeakPact recovery mode</Text>
+          <Text style={styles.title}>{getLocalizedText('appTitle', language)}</Text>
           <Text style={styles.body}>
-            A runtime issue was captured and logged. Restart the app to continue.
+            {getLocalizedText('profileLanguageNote', language)}
           </Text>
           <Pressable style={styles.button} onPress={() => this.setState({ hasError: false })}>
-            <Text style={styles.buttonText}>Try again</Text>
+            <Text style={styles.buttonText}>{getLocalizedText('onboardingButton', language)}</Text>
           </Pressable>
         </View>
       </SafeAreaView>

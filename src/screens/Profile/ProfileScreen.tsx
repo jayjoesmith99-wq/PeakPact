@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -7,42 +7,57 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getLocalizedText } from '../../i18n';
+import i18n from 'i18next';
+import { getLocalizedText, resolveLanguage, type SupportedLanguage } from '../../i18n';
 
 export default function ProfileScreen() {
+  const [language, setLanguage] = useState<SupportedLanguage>(() => resolveLanguage(i18n.language));
+
+  useEffect(() => {
+    const handleLanguageChange = (nextLanguage: string) => {
+      setLanguage(resolveLanguage(nextLanguage));
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#080808" />
       <ScrollView contentContainerStyle={styles.content} bounces={false} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{getLocalizedText('profileTitle')}</Text>
-        <Text style={styles.subtitle}>{getLocalizedText('profileSubtitle')}</Text>
+        <Text style={styles.title}>{getLocalizedText('profileTitle', language)}</Text>
+        <Text style={styles.subtitle}>{getLocalizedText('profileSubtitle', language)}</Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>{getLocalizedText('profileCodenameLabel')}</Text>
-          <Text style={styles.cardValue}>{getLocalizedText('profileCodenameValue')}</Text>
-          <Text style={styles.cardNote}>{getLocalizedText('profileCodenameNote')}</Text>
-        </View>
-
-        <View style={styles.card}> 
-          <Text style={styles.cardLabel}>{getLocalizedText('profileMembershipLabel')}</Text>
-          <Text style={styles.cardValue}>{getLocalizedText('profileMembershipValue')}</Text>
-          <Text style={styles.cardNote}>{getLocalizedText('profileMembershipNote')}</Text>
+          <Text style={styles.cardLabel}>{getLocalizedText('profileCodenameLabel', language)}</Text>
+          <Text style={styles.cardValue}>{getLocalizedText('profileCodenameValue', language)}</Text>
+          <Text style={styles.cardNote}>{getLocalizedText('profileCodenameNote', language)}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>OPERATOR DOSSIER</Text>
-          <Text style={styles.cardNote}>Comprehensive discipline telemetry and career stats.</Text>
+          <Text style={styles.cardLabel}>{getLocalizedText('profileMembershipLabel', language)}</Text>
+          <Text style={styles.cardValue}>{getLocalizedText('profileMembershipValue', language)}</Text>
+          <Text style={styles.cardNote}>{getLocalizedText('profileMembershipNote', language)}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>{getLocalizedText('profileDossierTitle', language)}</Text>
+          <Text style={styles.cardNote}>{getLocalizedText('profileDossierNote', language)}</Text>
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statLabel}>LEVEL</Text>
+              <Text style={styles.statLabel}>{getLocalizedText('profileStatLevel', language)}</Text>
               <Text style={styles.statValue}>3</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statLabel}>STREAK</Text>
+              <Text style={styles.statLabel}>{getLocalizedText('profileStatStreak', language)}</Text>
               <Text style={styles.statValue}>6</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statLabel}>XP</Text>
+              <Text style={styles.statLabel}>{getLocalizedText('profileStatXp', language)}</Text>
               <Text style={styles.statValue}>1500</Text>
             </View>
           </View>

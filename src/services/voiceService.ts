@@ -1,4 +1,5 @@
 import { supabase } from '../../supabaseClient';
+import { buildStructuredVerification } from './aiService';
 
 type RecordingHandle = {
   stopAndUnloadAsync: () => Promise<unknown>;
@@ -8,6 +9,7 @@ type RecordingHandle = {
 };
 
 let expoAvModule: typeof import('expo-av') | null = null;
+let expoSpeechModule: typeof import('expo-speech') | null = null;
 let recording: RecordingHandle | null = null;
 
 const loadAudioModule = async () => {
@@ -35,10 +37,35 @@ const getTranscriptionEndpoint = () => {
 };
 
 const invokeSupabaseFunction = async <T>(functionName: string, payload: Record<string, unknown>): Promise<T> => {
-  const { data, error } = await supabase.functions.invoke<T>(functionName, { body: payload });
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) {
+    throw new Error(`Session lookup failed: ${sessionError.message}`);
+  }
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    throw new Error('No active Supabase session. Please sign in again.');
+  }
+
+  const { data, error } = await supabase.functions.invoke<T>(functionName, {
+    body: payload,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 
   if (error) {
-    throw error;
+    const context = (error as { context?: Response }).context;
+    if (context) {
+      try {
+        const body = await context.clone().json() as { error?: string; message?: string };
+        throw new Error(body.error || body.message || error.message);
+      } catch (parseError) {
+        if (parseError instanceof Error && parseError.message !== error.message) {
+          throw parseError;
+        }
+      }
+    }
+    throw new Error(error.message || 'Supabase Edge Function request failed.');
   }
 
   return data as T;
@@ -64,11 +91,31 @@ export type VoicePayload = {
   createdAt: string;
 };
 
+export type VoiceVerificationContext = {
+  userId: string;
+  contract: {
+    task: string;
+    durationMinutes: number;
+    stakePP: number;
+    acceptedAt: string;
+  };
+  proof?: {
+    photoPath?: string;
+    photoMimeType?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+};
+
 export const createVoicePayload = (content: string, type: 'audio' | 'text'): VoicePayload => ({
   type,
   content,
   createdAt: new Date().toISOString(),
 });
+
+export const shouldUseLocalVerificationFallback = (message: string): boolean => (
+  /\b429\b|rate limit|billing|quota|No active Supabase session|Session lookup failed|not configured|Edge Function returned a non-2xx status code|failed/i.test(message)
+);
 
 export const startVoiceRecording = async () => {
   const { Audio } = await loadAudioModule();
@@ -113,32 +160,71 @@ export const transcribeAudio = async (audioUri: string): Promise<string> => {
   return localFallbackTranscript(audioUri);
 };
 
-export const uploadVoicePayload = async (payload: VoicePayload) => {
+export const uploadVoicePayload = async (payload: VoicePayload, context?: VoiceVerificationContext) => {
   const endpoint = process.env.EXPO_PUBLIC_SUPABASE_URL
     ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/peakpact-verify`
     : null;
 
   if (!endpoint) {
+    const localResponse = buildStructuredVerification(payload.content, context?.contract, 'en');
     return {
       ok: true,
-      mode: 'local-prototype',
+      mode: 'local-fallback',
       payload,
+      response: localResponse,
     };
   }
 
   try {
-    const response = await invokeSupabaseFunction<unknown>('peakpact-verify', payload);
+    const response = await invokeSupabaseFunction<unknown>('peakpact-verify', {
+      ...payload,
+      ...(context ? { user_id: context.userId, contract: context.contract } : {}),
+      ...(context?.proof ? { proof: context.proof } : {}),
+    });
     return {
       ok: true,
       mode: 'edge-function',
       payload,
       response,
     };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Verification request failed';
+    const localResponse = buildStructuredVerification(payload.content, context?.contract, 'en');
+
+    if (shouldUseLocalVerificationFallback(message)) {
+      return {
+        ok: true,
+        mode: 'fallback-local-verification',
+        payload,
+        response: localResponse,
+      };
+    }
+
+    throw new Error(`PeakPact verification failed: ${message}`);
+  }
+};
+
+export const speakVoiceFeedback = async (text: string, language = 'en') => {
+  if (!text.trim()) return;
+
+  try {
+    if (!expoSpeechModule) {
+      expoSpeechModule = await import('expo-speech');
+    }
+    expoSpeechModule.stop();
+    expoSpeechModule.speak(text, { language });
   } catch {
-    return {
-      ok: false,
-      mode: 'local-fallback',
-      payload,
-    };
+    // Speech is optional. Recording and text entry must continue if it is unavailable.
+  }
+};
+
+export const stopVoiceFeedback = async () => {
+  try {
+    if (!expoSpeechModule) {
+      expoSpeechModule = await import('expo-speech');
+    }
+    expoSpeechModule.stop();
+  } catch {
+    // Speech is optional and should never block the app.
   }
 };

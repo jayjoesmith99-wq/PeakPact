@@ -1,3 +1,5 @@
+import { getLocalizedText } from './i18n';
+
 export type TutorialStep = {
   id: number;
   title: string;
@@ -127,13 +129,34 @@ const tutorialContentByLanguage: Record<string, TutorialStep[]> = {
 
 export function getTutorialSteps(language: string) {
   const normalized = language?.toLowerCase();
-  if (normalized?.startsWith('es')) return tutorialContentByLanguage.es;
-  if (normalized?.startsWith('fr')) return tutorialContentByLanguage.fr;
-  if (normalized?.startsWith('de')) return tutorialContentByLanguage.de;
-  if (normalized?.startsWith('pt')) return tutorialContentByLanguage.pt;
-  if (normalized?.startsWith('ja')) return tutorialContentByLanguage.ja;
-  if (normalized?.startsWith('zh')) return tutorialContentByLanguage.zh;
-  return tutorialContentByLanguage.en;
+  const baseSteps = normalized?.startsWith('es')
+    ? tutorialContentByLanguage.es
+    : normalized?.startsWith('fr')
+      ? tutorialContentByLanguage.fr ?? tutorialContentByLanguage.en
+      : normalized?.startsWith('de')
+        ? tutorialContentByLanguage.de ?? tutorialContentByLanguage.en
+        : normalized?.startsWith('pt')
+          ? tutorialContentByLanguage.pt ?? tutorialContentByLanguage.en
+          : normalized?.startsWith('ja')
+            ? tutorialContentByLanguage.ja ?? tutorialContentByLanguage.en
+            : normalized?.startsWith('zh')
+              ? tutorialContentByLanguage.zh ?? tutorialContentByLanguage.en
+              : normalized?.startsWith('ro')
+                ? tutorialContentByLanguage.ro ?? tutorialContentByLanguage.en
+                : normalized?.startsWith('it')
+                  ? tutorialContentByLanguage.it ?? tutorialContentByLanguage.en
+                  : tutorialContentByLanguage.en;
+
+  return [
+    ...baseSteps,
+    {
+      id: baseSteps.length,
+      title: getLocalizedText('tutorialVoiceTitle', language),
+      body: getLocalizedText('tutorialVoiceBody', language),
+      hint: getLocalizedText('tutorialVoiceHint', language),
+      tab: 'PACT' as const,
+    },
+  ];
 }
 
 export const TUTORIAL_STEPS = getTutorialSteps('en');

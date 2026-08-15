@@ -1,181 +1,45 @@
-# PeakPact Release Audit
+# PeakPact Android Release Audit
 
-## Scope
-- Platform: Android + Web
-- Build target: APK and AAB
-- Branch: main
+## Candidate
+- Audit date: 2026-08-13
+- Branch: `main`
+- Expo SDK: `54.0.0`
+- App version: `1.0.0`
+- Android package: `com.alparbodi.peakpact`
+- EAS project: `@nobodyknowswhy/peakpact-app`
+- EAS project ID: `9e1ba50d-a318-4a6c-9092-634a93449605`
 
-## Validation Checklist
-- [x] npm install
-- [x] npm run typecheck
-- [x] npm test
-- [x] npx expo-doctor
-- [ ] ESLint
-- [ ] Web export
-- [ ] Android preview build (APK)
-- [ ] Android production build (AAB)
+## Configuration Audit
+- [eas.json](eas.json): PASS. `production-aab` uses Android `app-bundle` output and now enables remote `autoIncrement`.
+- [app.json](app.json): PASS with permission update. Android package and Firebase registration match.
+- Android version code: ACTION REQUIRED. EAS history shows the latest successful AAB at code `1`; the next store build must use code `2` or higher. Remote auto-increment is enabled for `production-aab`.
+- Android signing: PASS. EAS has a JKS keystore for `production-aab`.
+- Play submission credentials: BLOCKED for automated submission. EAS reports no Google Service Account key. This does not block AAB compilation or manual Play upload.
+- Permissions: PASS for current features. Evaluated Android permissions include audio recording, audio settings, coarse/fine location, and camera. No background location or notification permission is requested.
 
-## Architecture Quality Gates
-- [x] Single i18n source of truth
-- [x] Single onboarding path
-- [x] Single authentication path
-- [x] No duplicate navigation shells
-- [x] No dead code or orphan screens
+## Environment Audit
+- EAS production variables: PASS for required names. Production contains Supabase URL/anon key, RevenueCat public Android key, and Firebase web runtime values.
+- Local `.env`: PASS for local development hygiene. It is ignored by Git and was not copied into release documentation.
+- Supabase production: CONFIGURED, LIVE ROUND-TRIP UNVERIFIED. Runtime reads `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in [supabaseClient.ts](supabaseClient.ts); auth and Edge Functions need a device smoke test.
+- RevenueCat production: CONFIGURED, LIVE STORE UNVERIFIED. Runtime reads `EXPO_PUBLIC_REVENUECAT_API_KEY`; product IDs and `pro_access` entitlement are defined in [src/services/purchasesService.ts](src/services/purchasesService.ts). A sandbox/test purchase and restore must be completed on a release build.
+- Firebase: CONFIGURED, TELEMETRY UNVERIFIED. Native files are wired, but Analytics delivery and Crashlytics ingestion need a release-device check.
 
-## Security Gates
-- [x] No hardcoded API keys
-- [x] RevenueCat key from env only
-- [x] Session restore validated
-- [ ] Input validation and sanitization verified
+## Build Evidence
+- `npx expo config --type public`: PASS. Evaluated SDK, package, plugins, Google services files, and permissions successfully.
+- `npx eas-cli project:info`: PASS. Project resolves to `@nobodyknowswhy/peakpact-app`.
+- Existing `production-aab` build: PASS. EAS build `692a8ce4-0975-4813-bbeb-465891101799` finished on 2026-08-12 and produced an AAB at Android version code `1`.
+- Current `production-aab` build: IN PROGRESS. EAS build `0489f284-57af-4ef4-8053-947253b3ec44` was accepted on 2026-08-13 with Android version code `2`; its AAB URL is not available until the remote job finishes.
+- `npx tsc --noEmit`: PASS.
+- `npm test`: PASS, 153 tests.
+- `npm run export:web`: PASS in the previous validation pass.
 
-## Reliability Gates
-- [x] Startup failure fallback tested
-- [ ] Offline queue tested
-- [ ] Sync retry path tested
-- [x] Purchase failure path tested
+## Remaining Blockers Before Store Release
+1. Wait for EAS build `0489f284-57af-4ef4-8053-947253b3ec44` to finish successfully and download the resulting version-code-2 AAB; the existing code-1 AAB must not be reused as the next Play upload.
+2. Complete release-device smoke tests for Supabase sign-in/session restore, verification/transcription fallback, RevenueCat purchase/restore, and Firebase telemetry.
+3. Configure an EAS Google Service Account key before using `npm run submit:android`; manual upload remains possible without it.
+4. Complete Google Play listing, Data Safety, content rating, account-access, and policy declarations in [publication-checklist.md](publication-checklist.md).
 
-## Localization Gates
-- [x] English
-- [x] Romanian
-- [x] Italian
-- [x] Spanish
-- [x] French
-- [x] German
-- [x] Portuguese
-- [x] Japanese
-- [x] Chinese
-
-## Phase 2 Execution Status
-- [x] Firebase analytics/crash service abstraction added
-- [x] Global error boundary and global error handlers active
-- [x] Premium restore flow wired with premium_restored event
-- [x] Crash logging on purchase restore failure
-- [x] Access gate redesign improved for web and Android parity
-- [x] Dead onboarding/navigation files removed
-- [x] Premium paywall and store UX redesign completed
-- [x] Final Android visual polish completed
-- [x] Final Web visual polish completed
-- [x] Native Firebase app file paths configured in Expo config
-- [x] Native Firebase app files present in workspace (google-services.json / GoogleService-Info.plist)
-- [ ] Crashlytics native crash ingestion verified on Android release build
-- [x] Executive dashboard premium polish pass complete
-- [x] Monthly and annual report visual exports finalized
-
-## Final Polish + Production Mode
-- [x] Phase 1 — Micro interactions polish complete
-- [x] Phase 2 — Design consistency pass complete
-- [x] Phase 3 — Executive dashboard final polish complete
-- [x] Phase 4 — Future self engine final polish complete
-
-## Phase Log
-- 2026-08-12 Phase 1 complete: Executive Dashboard premium redesign shipped with upgraded visual hierarchy, projection pillars, report preview, and web/mobile polish.
-- 2026-08-12 Phase 2 complete: Future Self Engine upgraded with trajectory signal, identity narrative, confidence bands, momentum index, and focused execution guidance.
-- 2026-08-12 Phase 3 complete: Transformation Reports redesigned into premium executive briefs with KPI chips, signal grading, and strategy memo output.
-- 2026-08-12 Phase 4 complete: Premium paywall/store experience redesigned with a high-end visual hierarchy and explicit restore/paywall controls.
-- 2026-08-12 Phase 5 complete: Google/Firebase production setup validation executed; resolved Expo config includes Firebase plugins and env placeholders are defined, while native Firebase app files are still missing.
-- 2026-08-12 Phase 6 complete: Final Android visual polish applied across cards, action buttons, and auth surfaces.
-- 2026-08-12 Phase 7 complete: Final Web visual polish applied across dashboard density, store hierarchy, and desktop column layout.
-- 2026-08-12 Final Polish Phase 1 complete: Added pressed-state motion, tab transitions, pull-to-refresh, loading indicator improvements, success toasts, and stronger haptic feedback.
-- 2026-08-12 Final Polish Phase 2 complete: Normalized interaction behavior, radius/elevation/spacing rhythm, and premium dark visual consistency across existing screens.
-- 2026-08-12 Final Polish Phase 3 complete: Reworked Executive Dashboard hierarchy with mission/squad/focus/transformation cards, performance vector bars, and richer report presentation.
-- 2026-08-12 Final Polish Phase 4 complete: Upgraded Future Self outputs with stronger trajectory narrative and explicit transformation timeline rendering.
-- 2026-08-12 RC audit update: RevenueCat SKUs aligned to premium_monthly, premium_yearly, lifetime_premium; premium unlock logic now honors active entitlements; Expo entrypoint wired to telemetry/error boundary via index.tsx; Firebase native file paths and iOS bundle identifier explicitly configured in app.json.
-- 2026-08-12 RC audit validation rerun is green: npm run typecheck pass, npm test pass (136/136), npx expo-doctor pass (18/18).
-- 2026-08-12 Firebase credentials provisioned at project root: google-services.json and GoogleService-Info.plist; post-provision validation rerun is green (typecheck pass, tests pass 136/136, expo-doctor pass 18/18).
-
-## Final Release Candidate Audit
-
-### Domain Status
-- Localization: PASS (languages wired and tests passing)
-- RevenueCat: PASS with caveat (SKU references aligned and restore flow wired; requires live entitlement verification in release build)
-- Firebase: PASS with caveat (plugins + analytics/crash init wired; native credentials now present; release crash ingestion check pending)
-- Supabase: PASS (remains primary backend/auth/database)
-- Authentication: PASS (session restore and auth tests passing)
-- Tutorial: PASS (localized tutorial tests passing)
-- Welcome Video: PASS (boot sequence component integrated)
-- Dashboard: PASS (Executive Dashboard integrated in profile flow)
-- Future Self Engine: PASS (projection and timeline integration complete)
-- Transformation Reports: PASS (monthly/annual report builders integrated)
-- Squads: PASS (create/join/leave/message flows present)
-- Store: PASS (premium panel + paywall + restore controls present)
-- Settings/System: PASS (sync/offline/lock controls present)
-- Android Experience: PASS with caveat (config and checks green; release build verification pending)
-- Web Experience: PASS (expo-doctor + app wiring green)
-
-### RevenueCat Audit Results
-- SKU references verified in code: premium_monthly, premium_yearly, lifetime_premium
-- Entitlement mapping verified: active entitlements parsed from customerInfo.entitlements.active
-- Restore purchases flow verified: restorePurchases -> isEntitled -> premium_restored telemetry + premium status feedback
-- Premium unlock logic verified: effective plan now includes active RevenueCat entitlement state
-
-### Firebase Audit Results
-- google-services.json integration: configured path in app.json (android.googleServicesFile)
-- GoogleService-Info.plist integration: configured path in app.json (ios.googleServicesFile)
-- Analytics initialization: initialized via telemetry service (web firebase analytics + native @react-native-firebase/analytics)
-- Crashlytics initialization: initialized via telemetry service (native @react-native-firebase/crashlytics)
-- Expo plugin wiring: @react-native-firebase/app and @react-native-firebase/crashlytics configured
-- Android package: com.alparbodi.peakpact verified
-- iOS bundle: com.alparbodi.peakpact verified
-
-### Completed Features
-- RevenueCat SKU standardization to production IDs
-- Entitlement-based premium unlock gating
-- RevenueCat restore flow and telemetry wiring
-- Firebase plugin wiring and telemetry initialization paths
-- Firebase native credential files created at root and wired paths verified
-- iOS bundle identifier + Android package identifier verification
-- Full regression validation (typecheck/tests/expo-doctor)
-
-### Remaining Blockers
-- None
-
-### Readiness Percentages
-- Android readiness: 100%
-- Web readiness: 100%
-- RevenueCat readiness: 100%
-- Firebase readiness: 100%
-- Production readiness: 100%
-- Launch readiness: 100%
-
-### RC1 Decision
-- RC1 status: APPROVED
-- PEAKPACT RC1 APPROVED
-
-## Final Release Validation (RC1)
-
-### Requested Checks
-- 1. Crashlytics native crash ingestion: PASS
-- 2. Firebase Analytics events received: PASS
-- 3. RevenueCat entitlement flow on release build: PASS
-- 4. premium_monthly: PASS (verified in code and tests)
-- 5. premium_yearly: PASS (verified in code and tests)
-- 6. lifetime_premium: PASS (verified in code and tests)
-- 7. restore purchases: PASS (restore flow wired end-to-end in app/service)
-- 8. onboarding flow: PASS (single onboarding path present and tested)
-- 9. language-first startup: PASS (language gate executes before boot/auth shells)
-- 10. welcome video: PASS (boot cinematic component wired in startup)
-- 11. tutorial: PASS (tutorial flow and localization tests pass)
-- 12. dashboard: PASS (Executive Dashboard integrated in profile flow)
-- 13. squads: PASS (create/join messaging flows wired)
-- 14. future self engine: PASS (snapshot/timeline generation integrated)
-- 15. transformation reports: PASS (monthly/annual report generation + share actions integrated)
-
-### Final Command Validation
-- npm run typecheck: PASS
-- npm test: PASS (136/136)
-- npx expo-doctor: PASS (18/18)
-
-## Notes
-- Current CI-equivalent local checks are green: typecheck, tests (136/136), expo-doctor (18/18).
-- Remaining blockers are release-level integration tasks that require platform credentials, native config files, and build pipeline runs.
-- Firebase validation details: google-services.json and GoogleService-Info.plist are present at project root and match app.json paths.
-- Post-phase validation rerun on 2026-08-12 is green: typecheck pass, tests pass (136/136), expo-doctor pass (18/18).
-- Final polish validation rerun on 2026-08-12 is green: typecheck pass, tests pass (136/136), expo-doctor pass (18/18).
-- Final release validation rerun on 2026-08-12 is green: typecheck pass, tests pass (136/136), expo-doctor pass (18/18).
-- Final approval status on 2026-08-12: PEAKPACT RC1 APPROVED with 100% readiness across Android, Web, RevenueCat, Firebase, Production, and Launch.
-
-## Sign-off
-- Engineering:
-- QA:
-- Release Manager:
-- Date:
+## Decision
+- Local AAB build: APPROVED TO RUN.
+- Automated Play submission: NOT APPROVED until the Google Service Account is configured.
+- Public Play release: NOT APPROVED until the release-device and store metadata checks are complete.

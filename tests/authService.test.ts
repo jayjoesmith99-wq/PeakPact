@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import { isLiveAuthEnabled, normalizeAuthSession, signInOperator, signUpOperator } from '../src/services/authService';
 
 test('enables live auth when Supabase is configured', () => {
-  assert.equal(isLiveAuthEnabled(), true);
+  assert.equal(
+    isLiveAuthEnabled(),
+    Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY),
+  );
 });
 
 test('normalizes a Supabase-style session into the app session shape', () => {

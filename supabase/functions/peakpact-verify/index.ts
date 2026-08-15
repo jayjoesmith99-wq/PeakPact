@@ -1,10 +1,34 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+const unauthorizedResponse = () => new Response(JSON.stringify({ error: 'Authentication required' }), {
+  status: 401,
+  headers: { 'Content-Type': 'application/json', ...corsHeaders },
+});
+
+const getAuthenticatedUser = async (req: { headers: Headers }) => {
+  const authorization = req.headers.get('Authorization');
+  if (!authorization?.startsWith('Bearer ')) return null;
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authorization } } },
+  );
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return error ? null : user;
+};
+
+const invalidPayloadResponse = (message: string) => new Response(JSON.stringify({ error: message }), {
+  status: 400,
+  headers: { 'Content-Type': 'application/json', ...corsHeaders },
+});
 
 type VerificationRequest = {
   type?: 'audio' | 'text';
@@ -19,6 +43,12 @@ type VerificationRequest = {
     stakePP?: number;
     acceptedAt?: string;
   };
+  proof?: {
+    photoPath?: string;
+    photoMimeType?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 };
 
 type VerificationResponse = {
@@ -28,8 +58,6 @@ type VerificationResponse = {
   severity: 'LOW' | 'MEDIUM' | 'HIGH';
   attribute_scale: string;
 };
-
-const systemPrompt = (content: string, contract?: VerificationRequest['contract']) => `You are the PeakPact Captain Overseer. Evaluate report: "${content}" against contract: "${contract?.task ?? 'NO CONTRACT'}". Match the language of the input. Use a strict cyber-industrial terminal tone. Reject vague contracts. Reject reports that do not match the contracted activity. Award PP only when the reported effort is specific, realistic, and aligned with the contract.`;
 
 const normalizeText = (text: string): string =>
   text.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
@@ -156,6 +184,45 @@ const heuristics = (text: string, contract?: VerificationRequest['contract']): V
   };
 };
 
+const verifyPhotoProof = async (proof: VerificationRequest['proof'], task: string): Promise<boolean> => {
+  if (!proof?.photoPath) return true;
+  const openAiKey = Deno.env.get('OPENAI_API_KEY');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  if (!openAiKey || !serviceRoleKey || !supabaseUrl) {
+    throw new Error('Photo verification is not configured on the server');
+  }
+
+  const admin = createClient(supabaseUrl, serviceRoleKey);
+  const storageClient = (admin as any).storage as {
+    from: (bucket: string) => { createSignedUrl: (path: string, expiresIn: number) => Promise<{ data?: { signedUrl?: string }; error?: { message?: string } }> };
+  };
+  const { data, error } = await storageClient.from('pact-proofs').createSignedUrl(proof.photoPath, 300);
+  if (error || !data?.signedUrl) {
+    throw new Error(`Photo proof could not be read: ${error?.message ?? 'signed URL unavailable'}`);
+  }
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAiKey}` },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      temperature: 0,
+      max_tokens: 20,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: `Does this image provide credible visual evidence for this completed task? Task: ${task}. Reply only MATCH or MISMATCH.` },
+          { type: 'image_url', image_url: { url: data.signedUrl } },
+        ],
+      }],
+    }),
+  });
+  if (!response.ok) throw new Error(`Photo verification failed (${response.status})`);
+  const result = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return result.choices?.[0]?.message?.content?.trim().toUpperCase().startsWith('MATCH') ?? false;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -168,11 +235,63 @@ serve(async (req) => {
     });
   }
 
+  const authenticatedUser = await getAuthenticatedUser(req);
+  if (!authenticatedUser) {
+    return unauthorizedResponse();
+  }
+
   try {
     const body = (await req.json()) as VerificationRequest;
-    const content = body.content ?? '';
-    const prompt = systemPrompt(content, body.contract);
+    const content = body.content?.trim() ?? '';
+    if (body.type !== 'audio' && body.type !== 'text') {
+      return invalidPayloadResponse('Verification type must be audio or text');
+    }
+    if (!content || content.length > 20000) {
+      return invalidPayloadResponse('Verification content is required and must be at most 20000 characters');
+    }
+    if (!body.createdAt || !Number.isFinite(Date.parse(body.createdAt))) {
+      return invalidPayloadResponse('A valid createdAt timestamp is required');
+    }
+    const createdDay = new Date(body.createdAt).toISOString().slice(0, 10);
+    const currentDay = new Date().toISOString().slice(0, 10);
+    if (createdDay !== currentDay) {
+      return invalidPayloadResponse('Pacts can only be committed for the current day');
+    }
+    if (body.user_id !== authenticatedUser.id) {
+      return new Response(JSON.stringify({ error: 'User identity mismatch' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+    const contract = body.contract;
+    if (!contract?.task || contract.task.trim().length > 500) {
+      return invalidPayloadResponse('A contract task is required and must be at most 500 characters');
+    }
+    const durationMinutes = contract.durationMinutes;
+    const stakePP = contract.stakePP;
+    if (typeof durationMinutes !== 'number' || !Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440) {
+      return invalidPayloadResponse('Contract duration must be an integer from 1 to 1440 minutes');
+    }
+    if (typeof stakePP !== 'number' || !Number.isInteger(stakePP) || stakePP < 1 || stakePP > 100000) {
+      return invalidPayloadResponse('Contract stake must be an integer from 1 to 100000 PP');
+    }
+    if (body.signature || body.device_timestamp) {
+      if (!body.signature || !body.device_timestamp || !Number.isFinite(Date.parse(body.device_timestamp))) {
+        return invalidPayloadResponse('Signature and a valid device timestamp must be provided together');
+      }
+    }
     const result = heuristics(content, body.contract);
+    const photoMatches = await verifyPhotoProof(body.proof, contract.task);
+    if (!photoMatches) {
+      return new Response(JSON.stringify({
+        ...result,
+        verified: false,
+        pp_awarded: 0,
+        terminal_response: '> ACTION REJECTED. PHOTO PROOF DOES NOT MATCH THE CONTRACT.',
+        severity: 'MEDIUM',
+        attribute_scale: '0',
+      }), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
 
     if (body.user_id && body.device_timestamp && body.signature) {
       const expectedSignature = await createSignature(body.user_id, content, body.device_timestamp);
@@ -199,7 +318,7 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ...result, system_prompt: prompt }), {
+    return new Response(JSON.stringify(result), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });

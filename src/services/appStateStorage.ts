@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Squad } from "./squadSystem";
 import type { DesignTemplateId } from "./designTemplates";
-import type { SupportedLanguage } from "./i18n";
+import { resolveLanguage, type SupportedLanguage } from "./i18n";
+import { createDefaultComplianceConsent, type ComplianceConsent } from "./complianceService";
 
 export type PersistedAppState = {
   onboardingSeen: boolean;
@@ -10,6 +11,7 @@ export type PersistedAppState = {
   activeSquadId: string | null;
   ownedDesignTemplates: DesignTemplateId[];
   selectedDesignTemplateId: DesignTemplateId;
+  complianceConsent?: ComplianceConsent;
 };
 
 const DEFAULT_PERSISTED_STATE: PersistedAppState = {
@@ -19,6 +21,7 @@ const DEFAULT_PERSISTED_STATE: PersistedAppState = {
   activeSquadId: null,
   ownedDesignTemplates: ["core"],
   selectedDesignTemplateId: "core",
+  complianceConsent: createDefaultComplianceConsent(),
 };
 
 export async function clearPersistedAppState() {
@@ -37,10 +40,7 @@ export async function loadPersistedAppState(): Promise<PersistedAppState | null>
         typeof parsed.onboardingSeen === "boolean"
           ? parsed.onboardingSeen
           : DEFAULT_PERSISTED_STATE.onboardingSeen,
-      language:
-        parsed.language === "es" || parsed.language === "fr" || parsed.language === "de" || parsed.language === "pt" || parsed.language === "ja" || parsed.language === "zh"
-          ? parsed.language
-          : DEFAULT_PERSISTED_STATE.language,
+      language: resolveLanguage(typeof parsed.language === "string" ? parsed.language : DEFAULT_PERSISTED_STATE.language),
       squads: Array.isArray(parsed.squads) ? parsed.squads : DEFAULT_PERSISTED_STATE.squads,
       activeSquadId:
         parsed.activeSquadId === null || typeof parsed.activeSquadId === "string"
@@ -53,6 +53,10 @@ export async function loadPersistedAppState(): Promise<PersistedAppState | null>
         typeof parsed.selectedDesignTemplateId === "string"
           ? (parsed.selectedDesignTemplateId as DesignTemplateId)
           : DEFAULT_PERSISTED_STATE.selectedDesignTemplateId,
+      complianceConsent:
+        parsed.complianceConsent && typeof parsed.complianceConsent === "object"
+          ? { ...createDefaultComplianceConsent(), ...parsed.complianceConsent }
+          : DEFAULT_PERSISTED_STATE.complianceConsent,
     };
   } catch {
     return DEFAULT_PERSISTED_STATE;

@@ -1,8 +1,10 @@
 ﻿import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://vkhychuzirljwsmiswdn.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZraHljaHV6aXJsandzbWlzd2RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMDcxNTMsImV4cCI6MjA5OTc4MzE1M30.BLRf_5IlR_ywZIYJi69qVbU2ZelxJNtfrRaVvpX9LNk';
+const configuredSupabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const configuredSupabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = configuredSupabaseUrl || 'https://placeholder.supabase.co';
+const supabaseAnonKey = configuredSupabaseAnonKey || 'placeholder-anon-key';
 const isNodeLikeRuntime = typeof window === 'undefined';
 
 const memoryStore = new Map<string, string>();
@@ -18,17 +20,17 @@ const fallbackStorage = {
 };
 
 export const isSupabaseConfigured = (): boolean => (
-  Boolean(supabaseUrl)
-  && Boolean(supabaseAnonKey)
-  && !supabaseUrl.includes('your-project')
-  && !supabaseAnonKey.includes('demo-key')
+  Boolean(configuredSupabaseUrl)
+  && Boolean(configuredSupabaseAnonKey)
+  && !configuredSupabaseUrl.includes('your-project')
+  && !configuredSupabaseAnonKey.includes('demo-key')
 );
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: !isNodeLikeRuntime,
-    detectSessionInUrl: !isNodeLikeRuntime,
+    detectSessionInUrl: false,
     storage: isNodeLikeRuntime ? fallbackStorage : AsyncStorage,
   },
 });

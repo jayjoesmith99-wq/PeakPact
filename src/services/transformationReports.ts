@@ -1,5 +1,6 @@
 import type { ExecutionCoachSnapshot } from './aiExecutionCoach';
 import type { FutureSelfSnapshot } from './futureSelfEngine';
+import { formatLocalizedText, getLocalizedText, type SupportedLanguage } from './i18n';
 
 export type TransformationReport = {
   period: 'monthly' | 'annual';
@@ -16,26 +17,43 @@ export function buildMonthlyTransformationReport(input: {
   codename: string;
   coach: ExecutionCoachSnapshot;
   future: FutureSelfSnapshot;
+  language: SupportedLanguage;
 }): TransformationReport {
   const projection90 = input.future.projections.find((item) => item.windowDays === 90);
   const projection30 = input.future.projections.find((item) => item.windowDays === 30);
 
   return {
     period: 'monthly',
-    headline: `${input.codename} Monthly Executive Brief`,
-    summary: `Discipline is ${input.coach.disciplineScore}/100 with a ${input.future.trajectorySignal} trajectory. Consistency and focus remain the main multipliers for next-cycle output quality.`,
+    headline: formatLocalizedText('reportMonthlyHeadline', { codename: input.codename }, input.language),
+    summary: formatLocalizedText('reportMonthlySummary', {
+      disciplineScore: `${input.coach.disciplineScore}/100`,
+      trajectorySignal: input.future.trajectorySignal,
+    }, input.language),
     highlights: [
-      `30-day vector: Level ${projection30?.projectedLevel ?? '-'} with streak ${projection30?.projectedStreak ?? '-'} (${projection30?.confidenceBand ?? 'stable'} confidence).`,
-      `90-day vector: Level ${projection90?.projectedLevel ?? '-'} with discipline ${projection90?.projectedDisciplineScore ?? '-'} and momentum ${projection90?.momentumIndex ?? '-'}.`,
+      formatLocalizedText('reportMonthlyHighlight30', {
+        level: projection30?.projectedLevel ?? '-',
+        streak: projection30?.projectedStreak ?? '-',
+        confidence: projection30?.confidenceBand ?? getLocalizedText('reportConfidenceStable', input.language),
+      }, input.language),
+      formatLocalizedText('reportMonthlyHighlight90', {
+        level: projection90?.projectedLevel ?? '-',
+        discipline: projection90?.projectedDisciplineScore ?? '-',
+        momentum: projection90?.momentumIndex ?? '-',
+      }, input.language),
       input.coach.weeklyReview,
     ],
-    shareText: `PeakPact Monthly Brief: Discipline ${input.coach.disciplineScore}/100, Focus ${input.coach.focusScore}/100, Trajectory ${input.future.trajectorySignal}, Identity ${input.coach.currentIdentity}.`,
+    shareText: formatLocalizedText('reportMonthlyShareText', {
+      disciplineScore: `${input.coach.disciplineScore}/100`,
+      focusScore: `${input.coach.focusScore}/100`,
+      trajectorySignal: input.future.trajectorySignal,
+      currentIdentity: input.coach.currentIdentity,
+    }, input.language),
     signal: input.future.trajectorySignal,
     kpis: [
-      { label: 'Discipline', value: `${input.coach.disciplineScore}/100` },
-      { label: 'Consistency', value: `${input.coach.consistencyScore}/100` },
-      { label: 'Focus', value: `${input.coach.focusScore}/100` },
-      { label: '90D Level', value: `L${projection90?.projectedLevel ?? '-'}` },
+      { label: getLocalizedText('dashboardDiscipline', input.language), value: `${input.coach.disciplineScore}/100` },
+      { label: getLocalizedText('dashboardConsistency', input.language), value: `${input.coach.consistencyScore}/100` },
+      { label: getLocalizedText('dashboardFocus', input.language), value: `${input.coach.focusScore}/100` },
+      { label: getLocalizedText('reportKpi90Level', input.language), value: `L${projection90?.projectedLevel ?? '-'}` },
     ],
     strategicMemo: input.future.identityNarrative,
   };
@@ -45,28 +63,41 @@ export function buildAnnualTransformationReport(input: {
   codename: string;
   coach: ExecutionCoachSnapshot;
   future: FutureSelfSnapshot;
+  language: SupportedLanguage;
 }): TransformationReport {
   const projection365 = input.future.projections.find((item) => item.windowDays === 365);
   const projection90 = input.future.projections.find((item) => item.windowDays === 90);
 
   return {
     period: 'annual',
-    headline: `${input.codename} Annual Transformation Dossier`,
-    summary: `Annual projection targets Level ${projection365?.projectedLevel ?? '-'} and discipline ${projection365?.projectedDisciplineScore ?? '-'}/100 with a ${projection365?.confidenceBand ?? 'stable'} confidence profile.`,
+    headline: formatLocalizedText('reportAnnualHeadline', { codename: input.codename }, input.language),
+    summary: formatLocalizedText('reportAnnualSummary', {
+      level: projection365?.projectedLevel ?? '-',
+      discipline: `${projection365?.projectedDisciplineScore ?? '-'}/100`,
+      confidence: projection365?.confidenceBand ?? getLocalizedText('reportConfidenceStable', input.language),
+    }, input.language),
     highlights: [
-      `Current identity class: ${input.coach.currentIdentity}`,
-      `Projected 90-day momentum index: ${projection90?.momentumIndex ?? '-'}`,
-      `Projected 365-day streak: ${projection365?.projectedStreak ?? '-'}`,
+      formatLocalizedText('reportAnnualIdentityClass', { currentIdentity: input.coach.currentIdentity }, input.language),
+      formatLocalizedText('reportAnnualMomentum', { momentum: projection90?.momentumIndex ?? '-' }, input.language),
+      formatLocalizedText('reportAnnualStreak', { streak: projection365?.projectedStreak ?? '-' }, input.language),
       projection365?.executionFocus ?? input.coach.recommendations[0],
     ],
-    shareText: `PeakPact Annual Dossier: Level ${projection365?.projectedLevel ?? '-'}, Discipline ${projection365?.projectedDisciplineScore ?? '-'}, Streak ${projection365?.projectedStreak ?? '-'}, Identity shift ${projection365?.identityShift ?? '-'}.`,
+    shareText: formatLocalizedText('reportAnnualShareText', {
+      level: projection365?.projectedLevel ?? '-',
+      discipline: projection365?.projectedDisciplineScore ?? '-',
+      streak: projection365?.projectedStreak ?? '-',
+      identityShift: projection365?.identityShift ?? '-',
+    }, input.language),
     signal: input.future.trajectorySignal,
     kpis: [
-      { label: 'Annual Level', value: `L${projection365?.projectedLevel ?? '-'}` },
-      { label: 'Annual Streak', value: `${projection365?.projectedStreak ?? '-'}` },
-      { label: 'Discipline', value: `${projection365?.projectedDisciplineScore ?? '-'}/100` },
-      { label: 'Confidence', value: projection365?.confidenceBand?.toUpperCase() ?? 'STABLE' },
+      { label: getLocalizedText('reportKpiAnnualLevel', input.language), value: `L${projection365?.projectedLevel ?? '-'}` },
+      { label: getLocalizedText('reportKpiAnnualStreak', input.language), value: `${projection365?.projectedStreak ?? '-'}` },
+      { label: getLocalizedText('dashboardDiscipline', input.language), value: `${projection365?.projectedDisciplineScore ?? '-'}/100` },
+      { label: getLocalizedText('reportKpiConfidence', input.language), value: projection365?.confidenceBand?.toUpperCase() ?? getLocalizedText('reportConfidenceStable', input.language).toUpperCase() },
     ],
-    strategicMemo: `Identity shift forecast: ${projection365?.identityShift ?? '-'}. ${input.future.identityNarrative}`,
+    strategicMemo: formatLocalizedText('reportAnnualStrategicMemo', {
+      identityShift: projection365?.identityShift ?? '-',
+      identityNarrative: input.future.identityNarrative,
+    }, input.language),
   };
 }

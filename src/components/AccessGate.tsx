@@ -1,6 +1,8 @@
 import React from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { AccessFormState, AccessMode } from "../services/accessGate";
+import { getEntryCopy } from "../i18n/entry";
+import type { SupportedLanguage } from "../i18n";
 
 const accessLogo = require("../../assets/logo.peakpact.png");
 
@@ -13,6 +15,7 @@ export default function AccessGate({
   onModeChange,
   onFieldChange,
   onSubmit,
+  language,
 }: {
   mode: AccessMode;
   form: AccessFormState;
@@ -22,8 +25,10 @@ export default function AccessGate({
   onModeChange: (mode: AccessMode) => void;
   onFieldChange: (field: keyof AccessFormState, value: string) => void;
   onSubmit: () => void;
+  language: SupportedLanguage;
 }) {
   const isWeb = Platform.OS === "web";
+  const copy = getEntryCopy(language);
 
   return (
     <View style={styles.container}>
@@ -32,31 +37,31 @@ export default function AccessGate({
       <View style={[styles.card, isWeb && styles.cardWeb]}>
         <View style={styles.headerRow}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>OPERATOR ACCESS</Text>
+            <Text style={styles.badgeText}>{copy.badge}</Text>
           </View>
           <Image source={accessLogo} style={styles.logo} resizeMode="contain" />
         </View>
 
         <Text style={styles.title}>PEAKPACT</Text>
-        <Text style={styles.subtitle}>Secure your command center and continue your pact.</Text>
+        <Text style={styles.subtitle}>{copy.subtitle}</Text>
 
         <View style={styles.modeRow}>
           <Pressable
             style={[styles.modeButton, mode === "SIGN_IN" && styles.modeButtonActive]}
             onPress={() => onModeChange("SIGN_IN")}
           >
-            <Text style={styles.modeText}>SIGN IN</Text>
+            <Text style={styles.modeText}>{copy.signIn}</Text>
           </Pressable>
           <Pressable
             style={[styles.modeButton, mode === "SIGN_UP" && styles.modeButtonActive]}
             onPress={() => onModeChange("SIGN_UP")}
           >
-            <Text style={styles.modeText}>SIGN UP</Text>
+            <Text style={styles.modeText}>{copy.signUp}</Text>
           </Pressable>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.fieldLabel}>EMAIL</Text>
+          <Text style={styles.fieldLabel}>{copy.email}</Text>
           <TextInput
             style={styles.input}
             value={form.email}
@@ -68,12 +73,12 @@ export default function AccessGate({
             autoCorrect={false}
             selectionColor="#25F9D5"
           />
-          <Text style={styles.fieldLabel}>PASSWORD</Text>
+          <Text style={styles.fieldLabel}>{copy.password}</Text>
           <TextInput
             style={styles.input}
             value={form.password}
             onChangeText={(value) => onFieldChange("password", value)}
-            placeholder="PASSWORD"
+            placeholder={copy.password}
             placeholderTextColor="#7a8ba0"
             secureTextEntry
             autoCorrect={false}
@@ -85,9 +90,9 @@ export default function AccessGate({
         <Text style={styles.status}>{statusMessage}</Text>
 
         <Pressable style={styles.submit} onPress={onSubmit} disabled={busy}>
-          <Text style={styles.submitText}>{busy ? "PROCESSING..." : "GRANT ACCESS"}</Text>
+          <Text style={styles.submitText}>{busy ? copy.processing : copy.grantAccess}</Text>
         </Pressable>
-        <Text style={styles.footerHint}>No codename required. Just secure access.</Text>
+        <Text style={styles.footerHint}>{copy.footer}</Text>
       </View>
     </View>
   );

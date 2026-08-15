@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import i18n from 'i18next';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ProductPlan } from '../services/productPlan';
+import { getLocalizedText, resolveLanguage, type SupportedLanguage } from '../services/i18n';
 
 type MonetizationPanelProps = {
   visible: boolean;
@@ -8,63 +10,99 @@ type MonetizationPanelProps = {
   plan: ProductPlan | string;
   isDeviceTrialActive?: boolean;
   trialDaysRemaining?: number;
+  canStartDeviceTrial?: boolean;
+  onStartDeviceTrial?: () => void;
 };
 
-const tiers = [
-  {
-    title: 'Core Discipline',
-    detail: 'Mission contracts, verification loops, progression, squads, and offline safety.',
-    price: 'Included',
-    badge: 'FREE',
-  },
-  {
-    title: 'Premium Monthly',
-    detail: 'Voice capture, reduced friction, and premium execution intelligence.',
-    price: 'EUR 6.99 / month',
-    badge: 'MOST FLEXIBLE',
-  },
-  {
-    title: 'Premium Yearly',
-    detail: 'Full premium stack with the strongest annual value profile.',
-    price: 'EUR 59.99 / year',
-    badge: 'BEST VALUE',
-  },
-  {
-    title: 'Lifetime Premium',
-    detail: 'Permanent premium unlock for users building long-term identity systems.',
-    price: 'One-time lifetime purchase',
-    badge: 'ONE-TIME',
-  },
-  {
-    title: 'Design Prestige Tiers',
-    detail: 'Permanent visual themes and premium interface packs purchased once.',
-    price: '180 / 260 / 320 PP',
-    badge: 'STYLE',
-  },
-];
-
-export default function MonetizationPanel({ visible, accent, plan, isDeviceTrialActive = false, trialDaysRemaining = 0 }: MonetizationPanelProps) {
+export default function MonetizationPanel({
+  visible,
+  accent,
+  plan,
+  isDeviceTrialActive = false,
+  trialDaysRemaining = 0,
+  canStartDeviceTrial = false,
+  onStartDeviceTrial,
+}: MonetizationPanelProps) {
   if (!visible) {
     return null;
   }
 
+  const [language, setLanguage] = useState<SupportedLanguage>(() => resolveLanguage(i18n.language));
   const isWeb = Platform.OS === 'web';
+  const tiers = useMemo(
+    () => [
+      {
+        title: getLocalizedText('premiumCoreDiscipline', language),
+        detail: getLocalizedText('premiumCoreDisciplineDetail', language),
+        price: getLocalizedText('premiumIncluded', language),
+        badge: getLocalizedText('premiumBadgeFree', language),
+      },
+      {
+        title: getLocalizedText('premiumMonthlyTitle', language),
+        detail: getLocalizedText('premiumMonthlyDetail', language),
+        price: '€9.99 / month',
+        badge: getLocalizedText('premiumBadgeMostFlexible', language),
+      },
+      {
+        title: getLocalizedText('premiumYearlyTitle', language),
+        detail: getLocalizedText('premiumYearlyDetail', language),
+        price: '€79.99 / year',
+        badge: getLocalizedText('premiumBadgeBestValue', language),
+      },
+      {
+        title: getLocalizedText('premiumLifetimeTitle', language),
+        detail: getLocalizedText('premiumLifetimeDetail', language),
+        price: '€199 one-time',
+        badge: getLocalizedText('premiumBadgeOneTime', language),
+      },
+      {
+        title: getLocalizedText('premiumDesignPrestigeTitle', language),
+        detail: getLocalizedText('premiumDesignPrestigeDetail', language),
+        price: '180 / 260 / 320 PP',
+        badge: getLocalizedText('premiumBadgeStyle', language),
+      },
+    ],
+    [language],
+  );
+
+  useEffect(() => {
+    const handleLanguageChange = (nextLanguage: string) => {
+      setLanguage(resolveLanguage(nextLanguage));
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
 
   return (
     <View style={[styles.panel, isWeb && styles.panelWeb]}>
-      <Text style={styles.eyebrow}>Premium Access</Text>
-      <Text style={styles.header}>Apple-grade calm. WHOOP-grade insight.</Text>
-      <Text style={styles.body}>PeakPact Core remains complete and free. Premium adds speed, intelligence, and sustained consistency under pressure.</Text>
+      <Text style={styles.eyebrow}>{getLocalizedText('premiumAccess', language)}</Text>
+      <Text style={styles.header}>{getLocalizedText('premiumHeader', language)}</Text>
+      <Text style={styles.body}>{getLocalizedText('premiumBody', language)}</Text>
+
+      {canStartDeviceTrial ? (
+        <View style={styles.trialDisclosure}>
+          <Text style={styles.trialTitle}>START 7-DAY PREMIUM TRIAL</Text>
+          <Text style={styles.trialBody}>No payment method is required. The trial ends automatically after 7 days and does not auto-renew or charge you.</Text>
+          <Text style={styles.trialBody}>After the trial, choose Premium Monthly for €9.99/month, Premium Yearly for €79.99/year, or Lifetime Premium for €199 through your app store. You can cancel store subscriptions in your Apple or Google account settings.</Text>
+          <Pressable style={[styles.trialButton, { borderColor: accent }]} onPress={onStartDeviceTrial}>
+            <Text style={[styles.trialButtonText, { color: accent }]}>START FREE TRIAL</Text>
+          </Pressable>
+        </View>
+      ) : null}
       
       <View style={styles.statusCard}>
-        <Text style={styles.statusLabel}>Current Plan</Text>
+        <Text style={styles.statusLabel}>{getLocalizedText('premiumCurrentPlan', language)}</Text>
         <Text style={styles.statusValue}>{plan}</Text>
         {isDeviceTrialActive ? (
-          <Text style={styles.statusTrail}>Device trial active. Premium access remains live for {trialDaysRemaining} more day(s).</Text>
+          <Text style={styles.statusTrail}>{`${getLocalizedText('premiumTrialActive', language)} ${trialDaysRemaining}`}</Text>
         ) : null}
       </View>
       
-      <Text style={styles.body}>Premium includes a 7-day free trial per new device and accelerated execution workflows across mission capture, coaching, and report intelligence.</Text>
+      <Text style={styles.body}>{getLocalizedText('premiumBody2', language)}</Text>
       
       {tiers.map((tier) => (
         <View key={tier.title} style={styles.tierCard}>
@@ -78,9 +116,9 @@ export default function MonetizationPanel({ visible, accent, plan, isDeviceTrial
       ))}
 
       <Pressable style={styles.cta}>
-        <Text style={styles.ctaText}>Upgrade To Premium</Text>
+        <Text style={styles.ctaText}>{getLocalizedText('premiumUpgradeCta', language)}</Text>
       </Pressable>
-      <Text style={styles.footer}>Discipline stays free. Friction removal is premium.</Text>
+      <Text style={styles.footer}>{getLocalizedText('premiumFooter', language)}</Text>
     </View>
   );
 }
@@ -144,6 +182,39 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 10,
     lineHeight: 20,
+  },
+  trialDisclosure: {
+    borderWidth: 1,
+    borderColor: 'rgba(156,226,42,0.45)',
+    padding: 14,
+    marginBottom: 12,
+    backgroundColor: 'rgba(156,226,42,0.08)',
+    borderRadius: 12,
+  },
+  trialTitle: {
+    color: '#F4F8FC',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  trialBody: {
+    color: '#C8D4E1',
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  trialButton: {
+    borderWidth: 1,
+    alignItems: 'center',
+    paddingVertical: 11,
+    borderRadius: 10,
+    marginTop: 2,
+  },
+  trialButtonText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   tierCard: {
     borderWidth: 1,

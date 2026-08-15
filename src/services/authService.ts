@@ -45,6 +45,23 @@ export function normalizeAuthSession(session: any): AuthSession {
   };
 }
 
+export function hasActiveAuthSession(session: AuthSession | null): boolean {
+  if (!session?.user) {
+    return false;
+  }
+
+  if (!session.accessToken) {
+    return Boolean(session.user && !session.expiresAt);
+  }
+
+  const expiresAt = Number(session.expiresAt ?? 0);
+  if (!Number.isFinite(expiresAt) || expiresAt <= 0) {
+    return true;
+  }
+
+  return expiresAt > Date.now();
+}
+
 export function isLiveAuthEnabled(): boolean {
   return isSupabaseConfigured();
 }
@@ -60,11 +77,12 @@ export async function restoreOperatorSession(): Promise<AuthSession | null> {
 
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) {
+    if (error || !session) {
       return null;
     }
 
-    return normalizeAuthSession(session);
+    const normalized = normalizeAuthSession(session);
+    return hasActiveAuthSession(normalized) ? normalized : null;
   } catch {
     return null;
   }
@@ -212,6 +230,24 @@ export async function signOutOperator(): Promise<{ ok: boolean; message: string 
     return { ok: true, message: 'TERMINAL LOCKED' };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : 'SIGN OUT FAILED' };
+  }
+}
+
+export async function deleteCurrentAccount(): Promise<{ ok: boolean; message: string }> {
+  if (!isLiveAuthEnabled()) {
+    return { ok: false, message: 'LOCAL ACCOUNT' };
+  }
+
+  try {
+    const { error } = await supabase.functions.invoke('delete-account', { body: {} });
+    if (error) {
+      return { ok: false, message: error.message || 'ACCOUNT DELETION FAILED' };
+    }
+
+    await supabase.auth.signOut();
+    return { ok: true, message: 'ACCOUNT DELETED' };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : 'ACCOUNT DELETION FAILED' };
   }
 }
 

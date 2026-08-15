@@ -1,3 +1,5 @@
+import { formatLocalizedText, getLocalizedText, type SupportedLanguage } from './i18n';
+
 export type FutureSelfProjection = {
   windowDays: 30 | 90 | 365;
   projectedLevel: number;
@@ -32,10 +34,10 @@ function resolveTrajectorySignal(score: number): FutureSelfSnapshot['trajectoryS
   return 'recovering';
 }
 
-function resolveFocus(windowDays: 30 | 90 | 365): string {
-  if (windowDays === 30) return 'Lock in completion reliability through tighter mission scope.';
-  if (windowDays === 90) return 'Increase strategic difficulty while preserving streak continuity.';
-  return 'Convert discipline into durable identity leadership and output quality.';
+function resolveFocus(windowDays: 30 | 90 | 365, language: SupportedLanguage): string {
+  if (windowDays === 30) return getLocalizedText('futureFocus30', language);
+  if (windowDays === 90) return getLocalizedText('futureFocus90', language);
+  return getLocalizedText('futureFocus365', language);
 }
 
 export function buildFutureSelfSnapshot(input: {
@@ -43,6 +45,7 @@ export function buildFutureSelfSnapshot(input: {
   level: number;
   streak: number;
   disciplineScore: number;
+  language: SupportedLanguage;
 }): FutureSelfSnapshot {
   const trajectorySignal = resolveTrajectorySignal(input.disciplineScore);
 
@@ -59,10 +62,19 @@ export function buildFutureSelfSnapshot(input: {
       projectedLevel,
       projectedStreak,
       projectedDisciplineScore,
-      identityShift: `${input.currentIdentity} -> ${projectedDisciplineScore >= 85 ? 'Leader' : 'Builder'}`,
+      identityShift: formatLocalizedText(
+        'futureIdentityShift',
+        {
+          currentIdentity: input.currentIdentity,
+          nextIdentity: projectedDisciplineScore >= 85
+            ? getLocalizedText('futureIdentityLeader', input.language)
+            : getLocalizedText('futureIdentityBuilder', input.language),
+        },
+        input.language,
+      ),
       confidenceBand,
       momentumIndex,
-      executionFocus: resolveFocus(windowDays),
+      executionFocus: resolveFocus(windowDays, input.language),
     };
   };
 
@@ -77,13 +89,16 @@ export function buildFutureSelfSnapshot(input: {
     trajectorySignal,
     identityNarrative:
       trajectorySignal === 'dominant'
-        ? 'Identity signal is dominant. Protect quality while scaling mission ambition.'
+        ? getLocalizedText('futureNarrativeDominant', input.language)
         : trajectorySignal === 'ascending'
-          ? 'Identity signal is ascending. Keep consistency high and avoid mission sprawl.'
-          : 'Identity signal is recovering. Prioritize completion discipline before difficulty.',
+          ? getLocalizedText('futureNarrativeAscending', input.language)
+          : getLocalizedText('futureNarrativeRecovering', input.language),
     transformationTimeline: projections.map((projection) => ({
       day: projection.windowDays,
-      title: `Day ${projection.windowDays}: ${projection.identityShift}`,
+      title: formatLocalizedText('futureTimelineTitle', {
+        day: projection.windowDays,
+        identityShift: projection.identityShift,
+      }, input.language),
       summary: projection.executionFocus,
       confidenceBand: projection.confidenceBand,
     })),

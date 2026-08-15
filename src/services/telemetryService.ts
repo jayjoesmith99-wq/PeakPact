@@ -9,6 +9,8 @@ type TelemetryEvent =
   | 'mission_completed'
   | 'squad_created'
   | 'squad_joined'
+  | 'squad_left'
+  | 'report_shared'
   | 'premium_viewed'
   | 'premium_started'
   | 'premium_restored'

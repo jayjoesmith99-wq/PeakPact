@@ -1,5 +1,6 @@
 import {
   getLocalizedText,
+  formatLocalizedText,
   getStoredLanguage,
   getSupportedLanguages,
   initializeI18n,
@@ -13,6 +14,7 @@ import {
 
 export {
   getLocalizedText,
+  formatLocalizedText,
   getStoredLanguage,
   getSupportedLanguages,
   initializeI18n,

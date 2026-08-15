@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import type { SupportedLanguage } from '../i18n';
+import { getEntryCopy } from '../i18n/entry';
 
 type LanguageOption = {
   code: SupportedLanguage;
@@ -40,6 +41,7 @@ export default function LanguageSelectionScreen({
   onContinue,
 }: LanguageSelectionScreenProps) {
   const isWeb = Platform.OS === 'web';
+  const copy = getEntryCopy(selectedLanguage);
 
   const selected = useMemo(
     () => options.find((option) => option.code === selectedLanguage) ?? options[0],
@@ -52,9 +54,9 @@ export default function LanguageSelectionScreen({
       <View style={styles.backgroundGlowBottom} />
       <View style={[styles.shell, isWeb && styles.shellWeb]}>
         <Text style={styles.eyebrow}>PEAKPACT</Text>
-        <Text style={styles.title}>Choose your language</Text>
+        <Text style={styles.title}>{copy.chooseLanguage}</Text>
         <Text style={styles.subtitle}>
-          Language is applied before onboarding, welcome cinematic, and mission system.
+          {copy.languageSubtitle}
         </Text>
 
         <ScrollView
@@ -77,9 +79,9 @@ export default function LanguageSelectionScreen({
         </ScrollView>
 
         <View style={styles.footerRow}>
-          <Text style={styles.footerHint}>Selected: {selected.label}</Text>
+          <Text style={styles.footerHint}>{copy.selected}: {selected.label}</Text>
           <Pressable style={styles.button} onPress={onContinue}>
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>{copy.continue}</Text>
           </Pressable>
         </View>
       </View>
